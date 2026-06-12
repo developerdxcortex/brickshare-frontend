@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans text-ink antialiased bg-white;
+  }
+  ::selection {
+    @apply bg-gold/40 text-navy;
+  }
+}
+
+@layer components {
+  /* Reusable buttons */
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold-400 px-6 py-3
+      font-semibold text-navy shadow-gold transition-all duration-300
+      hover:bg-gold-500 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_-8px_rgba(245,197,24,0.6)]
+      active:translate-y-0;
+  }
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-3
+      font-semibold text-gold-400 ring-1 ring-gold-400/40 transition-all duration-300
+      hover:bg-navy-700 hover:-translate-y-0.5;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-navy/30
+      px-6 py-3 font-semibold text-navy transition-all duration-300
+      hover:border-navy hover:-translate-y-0.5;
+  }
+  .section {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-royal;
+  }
+}
+
+/* Subtle film grain / texture utility */
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Range slider styling for the ROI calculator */
+input[type="range"].brick-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: #e6dcc2;
+  outline: none;
+}
+input[type="range"].brick-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #f5c518;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(245, 197, 24, 0.6);
+  cursor: pointer;
+}
+input[type="range"].brick-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #f5c518;
+  border: 3px solid #ffffff;
+  cursor: pointer;
+}
+
+.forandnotbg{
+  background-image: url('/images/who-brick.jpg');
+}
+.homelocal {
+  background-image: url('/images/home-local.webp');
+}
+.footer-bg{
+   background-image: url('/images/footer.webp');
+}
+.our-journey{
+  background-image: url('/images/our-journey.webp');
+  background-position: bottom;
+}
+.how-it-works-cta {
+  background-image: url('/images/how-it-works-cta.webp');
+}
+.stay-know{
+  background-image: url('/images/stay-know.webp');
+}

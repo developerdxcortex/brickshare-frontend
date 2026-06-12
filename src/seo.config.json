@@ -1,0 +1,32 @@
+{
+  "siteUrl": "https://www.bricksharecapital.com",
+  "siteName": "BrickShare Capital LLC",
+  "defaultImage": "/images/og-default.jpg",
+  "twitter": "@brickshare",
+  "pages": {
+    "/": {
+      "title": "BrickShare Capital LLC — Fractional Real Estate Investing in Houston",
+      "description": "Own a fraction of premium Houston real estate. BrickShare Capital offers curated, transparent, asset-backed participation for disciplined, long-term investors. Start from $2,500."
+    },
+    "/about": {
+      "title": "About Us — BrickShare Capital | Houston Real Estate Investment Firm",
+      "description": "BrickShare Capital is a Houston-based real estate investment and capital management firm focused on transparent, professionally managed, growth-driven property participation."
+    },
+    "/how-it-works": {
+      "title": "How It Works — Fractional Real Estate Investing | BrickShare Capital",
+      "description": "Four simple steps to start building wealth through Houston real estate: select an opportunity, complete verification, invest securely via escrow, and track your returns."
+    },
+    "/projects": {
+      "title": "Investment Opportunities — Featured Houston Real Estate | BrickShare Capital",
+      "description": "Explore carefully vetted, professionally analyzed real estate investment opportunities across Houston with attractive, risk-adjusted target returns."
+    },
+    "/education": {
+      "title": "Education — Real Estate Investing Guides & Market Insights | BrickShare Capital",
+      "description": "Practical guides and Houston market insights on fractional ownership, tax tips, and long-term wealth building to help you invest with confidence."
+    },
+    "/contact": {
+      "title": "Contact Us — Let's Build Wealth Together | BrickShare Capital",
+      "description": "Have questions about our investment opportunities or want to explore a partnership? Get in touch with the BrickShare Capital team in Houston, Texas."
+    }
+  }
+}
