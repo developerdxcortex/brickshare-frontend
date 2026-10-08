@@ -708,7 +708,7 @@ function ForAndNot() {
     "Not a promise of returns",
   ];
   return (
-    <section className="relative overflow-hidden text-white">
+    <section className="forandnot relative overflow-hidden text-white">
       <div className="grid md:grid-cols-2">
         {/* LEFT — background image */}
         <div className="relative overflow-hidden py-16 bg-cover bg-center forandnotbg">

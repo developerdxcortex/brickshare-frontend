@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, TrendingUp, DollarSign, Building2, Clock } from "lucide-react";
-import { CTAButton, Loader } from "../components/ui";
+import { ArrowLeft, MapPin, Check, TrendingUp, DollarSign, Building2, Clock, FileText, ArrowRight, ExternalLink } from "lucide-react";
+import { Loader } from "../components/ui";
 import Reveal from "../components/Reveal";
 import { api } from "../lib/api";
 import { useSeo } from "../lib/seo";
+import { findPlanDetailExtra } from "../data/planDetails";
 
 export default function PlanDetail() {
   const { id } = useParams();
@@ -36,6 +37,8 @@ export default function PlanDetail() {
       </div>
     );
   if (!plan) return <Loader label="Loading opportunity…" />;
+
+  const extra = findPlanDetailExtra(plan.name);
 
   const stats = [
     { icon: DollarSign, label: "Min. Investment", value: plan.minInvestment },
@@ -110,12 +113,156 @@ export default function PlanDetail() {
                   </ul>
                 </>
               )}
+
+              {extra && (
+                <div className="mt-10 space-y-10">
+                  {/* Investment Snapshot */}
+                  <div>
+                    <h3 className="text-lg font-bold text-ink">Investment Snapshot</h3>
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {extra.snapshot.map((s) => (
+                        <div key={s.label} className="rounded-xl bg-white p-4 text-center shadow-soft">
+                          <p className="text-lg font-extrabold text-gold-600">{s.value}</p>
+                          <p className="mt-1 text-[11px] text-ink/60">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* How It Works — horizontal flow, matches phases style */}
+                  {extra.howItWorks && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">How the Investment Works</h3>
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        {extra.howItWorks.map((step, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="rounded-xl bg-white px-4 py-3 text-center shadow-soft ring-1 ring-black/5">
+                              <p className="text-sm font-semibold text-ink">{step.label}</p>
+                            </div>
+                            {i < extra.howItWorks!.length - 1 && (
+                              <ArrowRight size={16} className="shrink-0 text-gold-500" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Investment Options — grid, matches financials style */}
+                  {extra.options && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">Investment Options</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {extra.options.map((o) => (
+                          <div key={o.title} className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-black/5">
+                            <p className="text-2xl font-extrabold text-navy">{o.value}</p>
+                            <p className="mt-1 text-xs text-ink/60">{o.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Development Phases — horizontal flow */}
+                  {extra.phases && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">Development Strategy</h3>
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        {extra.phases.map((p, i) => (
+                          <div key={p.label} className="flex items-center gap-2">
+                            <div className="rounded-xl bg-white px-4 py-3 text-center shadow-soft ring-1 ring-black/5">
+                              <p className="text-xs font-bold uppercase tracking-wide text-gold-600">{p.label}</p>
+                              {p.detail && <p className="mt-0.5 text-sm font-semibold text-ink">{p.detail}</p>}
+                            </div>
+                            {i < extra.phases!.length - 1 && (
+                              <ArrowRight size={16} className="shrink-0 text-gold-500" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Financial Projection */}
+                  {extra.financials && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">Financial Projection</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        {extra.financials.map((f) => (
+                          <div key={f.label} className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-black/5">
+                            <p className="text-2xl font-extrabold text-navy">{f.value}</p>
+                            <p className="mt-1 text-xs text-ink/60">{f.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Target Investor Returns */}
+                  {extra.returns && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">Target Investor Returns</h3>
+                      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {extra.returns.map((r) => (
+                          <div key={r.label} className="rounded-xl bg-gold-400/15 p-4 text-center ring-1 ring-gold-400/30">
+                            <p className="text-lg font-extrabold text-gold-600">{r.value}</p>
+                            <p className="mt-1 text-[11px] text-ink/60">{r.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Investor Advantages */}
+                  {extra.advantages && (
+                    <div>
+                      <h3 className="text-lg font-bold text-ink">Investor Advantages</h3>
+                      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {extra.advantages.map((a) => (
+                          <li key={a} className="flex items-start gap-3 rounded-xl bg-white p-3 shadow-soft">
+                            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gold-400 text-navy">
+                              <Check size={12} />
+                            </span>
+                            <span className="text-sm text-ink/80">{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* Documents (dynamic, from admin panel) */}
+              {plan.documents?.length > 0 && (
+                <div className="mt-10 space-y-3 pb-2">
+                  <h3 className="text-lg font-bold text-ink">Documents</h3>
+                  {plan.documents.map((doc: { label: string; url: string }, i: number) => (
+                    <a
+                      key={i}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex max-w-md items-center gap-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-black/5 transition-shadow hover:shadow-card"
+                    >
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-navy text-gold-400">
+                        <FileText size={22} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold text-ink">View Document</span>
+                        <span className="block truncate text-xs text-ink/55">{doc.label}</span>
+                      </span>
+                      <ExternalLink size={16} className="shrink-0 text-ink/40" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </Reveal>
 
           {/* Funding sidebar */}
           <Reveal delay={0.1}>
-            <div className="sticky top-24 rounded-2xl bg-navy p-7 text-white shadow-card">
+            <div className="sticky top-24 mt-2 rounded-2xl bg-navy p-7 text-white shadow-card lg:mt-0">
               <p className="text-sm text-white/60">Funding Progress</p>
               <p className="mt-1 text-3xl font-extrabold text-gold-400">{plan.fundedPercent || 0}%</p>
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -139,10 +286,6 @@ export default function PlanDetail() {
               </p>
             </div>
           </Reveal>
-        </div>
-
-        <div className="section">
-          <CTAButton to="/projects" variant="dark">View More Opportunities</CTAButton>
         </div>
       </section>
     </>

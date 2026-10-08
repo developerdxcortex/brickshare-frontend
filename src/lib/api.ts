@@ -68,6 +68,17 @@ export const api = {
   adminInquiries: () => request<any[]>("/api/contact/admin/all", { auth: true }),
   deleteInquiry: (id: string) => request(`/api/contact/${id}`, { method: "DELETE", auth: true }),
 
+  // --- Sponsors ---
+  submitSponsor: (body: any) =>
+    request<{ ok: boolean; planLabel: string; amount: number; id: string }>("/api/sponsors", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminSponsors: () => request<any[]>("/api/sponsors/admin/all", { auth: true }),
+  updateSponsor: (id: string, body: any) =>
+    request(`/api/sponsors/${id}`, { method: "PUT", body: JSON.stringify(body), auth: true }),
+  deleteSponsor: (id: string) => request(`/api/sponsors/${id}`, { method: "DELETE", auth: true }),
+  
   // --- Upload (S3) ---
   upload: async (file: File, folder = "uploads") => {
     const fd = new FormData();

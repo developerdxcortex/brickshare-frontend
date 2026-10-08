@@ -9,6 +9,8 @@ const links = [
   { to: "/about", label: "About" },
   { to: "/how-it-works", label: "How It Works" },
   { to: "/projects", label: "Projects" },
+  { to: "/our-work", label: "Our Work" },
+  { to: "/events", label: "Events" },
   { to: "/education", label: "Education" },
 ];
 
@@ -38,7 +40,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden items-center gap-8 lg:flex">
+        <ul className="hidden items-center gap-6 xl:gap-8 lg:flex">
           {links.map((l) => (
             <li key={l.to}>
               <NavLink
