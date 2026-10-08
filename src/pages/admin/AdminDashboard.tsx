@@ -3,17 +3,18 @@ import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   Building2, Newspaper, MessageSquareQuote, Inbox, LogOut, Plus, Pencil, Trash2,
-  Eye, EyeOff, Home, Star,
+  Eye, EyeOff, Home, Star, Award, Check,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { Loader } from "../../components/ui";
 import { Input, TextArea, Select, Modal } from "../../components/admin/fields";
 import ImageUpload from "../../components/admin/ImageUpload";
+import DocumentUpload from "../../components/admin/DocumentUpload";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useSeo } from "../../lib/seo";
 
-type Tab = "plans" | "articles" | "reviews" | "inquiries";
+type Tab = "plans" | "articles" | "reviews" | "inquiries" | "sponsors";
 
 export default function AdminDashboard() {
   useSeo({ title: "Admin Dashboard — BrickShare Capital", description: "Admin area.", noindex: true });
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
     { key: "articles", label: "Articles", icon: Newspaper },
     { key: "reviews", label: "Reviews", icon: MessageSquareQuote },
     { key: "inquiries", label: "Inquiries", icon: Inbox },
+    { key: "sponsors", label: "Sponsors", icon: Award },
   ];
 
   const SidebarNav = (
@@ -92,6 +94,7 @@ export default function AdminDashboard() {
           {tab === "articles" && <ArticlesManager />}
           {tab === "reviews" && <ReviewsManager />}
           {tab === "inquiries" && <InquiriesManager />}
+          {tab === "sponsors" && <SponsorsManager />}
         </div>
       </main>
     </div>
@@ -132,7 +135,7 @@ const emptyPlan = {
   name: "", city: "Houston, TX", type: "High-Rise Apartments", minInvestment: "$25,000",
   targetReturn: "9-11% p.a.", status: "OPEN", image: "", imageKey: "", tagline: "",
   description: "", propertyValue: "", holdPeriod: "", fundedPercent: 0,
-  highlightsText: "", published: true,
+  highlightsText: "", published: true, documents: [],
 };
 
 function PlansManager() {
@@ -233,6 +236,7 @@ function PlanForm({ initial, onClose, onSave }: { initial: any; onClose: () => v
         <TextArea label="Description" value={f.description} onChange={set("description")} rows={4} />
         <TextArea label="Highlights" value={f.highlightsText} onChange={set("highlightsText")} rows={4}
           hint="Ek line me ek highlight likho (one per line)." />
+        <DocumentUpload label="Documents (PDFs)" value={f.documents || []} onChange={set("documents")} folder="documents" />
         <button onClick={submit} disabled={busy} className="btn-gold w-full disabled:opacity-60">
           {busy ? "Saving…" : "Save Plan"}
         </button>
@@ -381,7 +385,70 @@ function ReviewsManager() {
     </>
   );
 }
+/* ============================== SPONSORS ================================== */
+function SponsorsManager() {
+  const [items, setItems] = useState<any[] | null>(null);
+  const load = () => api.adminSponsors().then(setItems).catch(() => setItems([]));
+  useEffect(() => { load(); }, []);
 
+  const toggle = async (s: any) => {
+    await api.updateSponsor(s._id, { handled: !s.handled });
+    load();
+  };
+  const del = async (id: string) => {
+    if (!confirmDelete("Delete this sponsor registration?")) return;
+    await api.deleteSponsor(id);
+    load();
+  };
+  if (!items) return <Loader />;
+
+  const total = items.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+  return (
+    <>
+      <Header
+        title="Sponsors"
+        subtitle={`Events page sponsor registrations · Total pledged $${total.toLocaleString("en-US")}`}
+        count={items.length}
+      />
+      <div className="space-y-4">
+        {items.map((s) => (
+          <div key={s._id} className={`rounded-2xl bg-white p-5 shadow-soft ${s.handled ? "opacity-60" : ""}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-bold text-ink">{s.name}</p>
+                  <span className="rounded-full bg-gold-400 px-2.5 py-0.5 text-[10px] font-bold text-navy">
+                    {s.planLabel} · ${Number(s.amount).toLocaleString("en-US")}{s.plan === "founding" ? "+" : ""}
+                  </span>
+                  {s.handled && (
+                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">Handled</span>
+                  )}
+                  <span className="text-xs text-ink/40">{new Date(s.createdAt).toLocaleString()}</span>
+                </div>
+                <p className="mt-1 text-sm text-ink/70">
+                  <a href={`mailto:${s.email}`} className="text-royal hover:underline">{s.email}</a>
+                  {s.phone && <span> · <a href={`tel:${s.phone}`} className="hover:underline">{s.phone}</a></span>}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={() => toggle(s)} title={s.handled ? "Mark as pending" : "Mark as handled"}
+                  className={`grid h-9 w-9 place-items-center rounded-lg ${s.handled ? "bg-green-100 text-green-700" : "bg-cream text-ink/60 hover:bg-green-50 hover:text-green-700"}`}>
+                  <Check size={16} />
+                </button>
+                <button onClick={() => del(s._id)}
+                  className="grid h-9 w-9 place-items-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-ink/50">No sponsor registrations yet.</p>}
+      </div>
+    </>
+  );
+}
 /* ============================== INQUIRIES ================================= */
 function InquiriesManager() {
   const [items, setItems] = useState<any[] | null>(null);

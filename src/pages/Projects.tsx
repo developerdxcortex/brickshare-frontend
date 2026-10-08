@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Check, Dot } from "lucide-react";
+import { Check, Dot } from "lucide-react";
 import {
   PageHero,
   ProjectCard,
@@ -9,10 +9,11 @@ import {
   type PlanLike,
 } from "../components/ui";
 import Reveal from "../components/Reveal";
-import { images } from "../config/site";
+import { images, documents } from "../config/site";
 import { api } from "../lib/api";
-import { Link } from "react-router-dom";
 import { useSeo, pageSeo } from "../lib/seo";
+import PitchDeckViewer from "../components/PitchDeckViewer";
+import { FileText } from "lucide-react";
 
 const reasons = [
   "Professionally vetted real estate projects",
@@ -25,6 +26,7 @@ const reasons = [
 export default function Projects() {
   useSeo(pageSeo("/projects"));
   const [plans, setPlans] = useState<PlanLike[] | null>(null);
+  const [showDeck, setShowDeck] = useState(false);
   useEffect(() => {
     api
       .getPlans()
@@ -51,14 +53,11 @@ export default function Projects() {
         <div className="section">
           <Reveal>
             <h2 className="text-center text-3xl font-semibold text-[#131627] sm:text-4xl">
-              Real Projects. Real Returns.
+              Real Estate Opportunities, Built Around Real Assets
             </h2>
             <div className="mx-auto my-3 h-px w-2/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
             <p className="mx-auto mt-5 max-w-2xl text-center text-[#131627] font-regular">
-              Explore carefully vetted real estate investment opportunities
-              across Houston. Each project is professionally analyzed,
-              transparently structured, and designed to deliver attractive,
-              risk-adjusted returns.
+              Explore curated real-estate participation opportunities across Houston and Texas, with clear project information, investment structures and supporting documentation.
             </p>
           </Reveal>
 
@@ -76,20 +75,34 @@ export default function Projects() {
               No opportunities available right now.
             </p>
           ) : (
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {plans.map((p, i) => (
-                <ProjectCard key={p._id || i} p={p} index={i} />
-              ))}
+            <div className="mt-10 grid auto-rows-fr items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((p, i) => {
+                const isLastAndAlone = plans.length % 2 !== 0 && i === plans.length - 1;
+                return (
+                  <div
+                    key={p._id || i}
+                    className={
+                      isLastAndAlone
+                        ? "h-full sm:col-span-2 sm:mx-auto sm:w-1/2 lg:col-span-1 lg:mx-0 lg:w-full"
+                        : "h-full"
+                    }
+                  >
+                    <ProjectCard p={p} index={i} />
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          <div className="mt-12 flex justify-center">
-            <Link to="/contact">
-              <button className="flex items-center gap-2 bg-[#131627] border border-[#FEDF27] text-[#FEDF27] shadow-[0px_4px_11.5px_0px_#988723] font-regular px-6 py-3 rounded-full text-sm hover:opacity-90">
-                <ArrowUpRight size={18} />
-                Explore Opportunities
-              </button>
-            </Link>
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowDeck(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(180deg,#D0B40D_0%,#FFEF90_100%)] border border-[#C1A814] px-6 py-3 text-sm font-semibold text-[#111111] shadow-sm transition-transform hover:scale-[1.02]"
+            >
+              <FileText size={16} />
+              View Investor Pitch Deck
+            </button>
           </div>
         </div>
       </section>
@@ -138,6 +151,13 @@ export default function Projects() {
           </div>
         </div>
       </section>
+
+      {showDeck && (
+        <PitchDeckViewer
+          fileUrl={documents.investorPitchDeck}
+          onClose={() => setShowDeck(false)}
+        />
+      )}
     </>
   );
 }

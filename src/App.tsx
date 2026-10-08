@@ -10,11 +10,15 @@ import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import Projects from "./pages/Projects";
 import PlanDetail from "./pages/PlanDetail";
+import OurWork from "./pages/OurWork";
+import ProjectDetail from "./pages/ProjectDetail";
+import Events from "./pages/Events";
 import Education from "./pages/Education";
 import ArticleDetail from "./pages/ArticleDetail";
 import Contact from "./pages/Contact";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+
 
 function Page({ children }: { children: React.ReactNode }) {
   return (
@@ -44,6 +48,9 @@ export default function App() {
           <Route path="/how-it-works" element={<Page><HowItWorks /></Page>} />
           <Route path="/projects" element={<Page><Projects /></Page>} />
           <Route path="/projects/:id" element={<Page><PlanDetail /></Page>} />
+          <Route path="/our-work" element={<Page><OurWork /></Page>} />
+          <Route path="/our-work/:slug" element={<Page><ProjectDetail /></Page>} />
+          <Route path="/events" element={<Page><Events /></Page>} />
           <Route path="/education" element={<Page><Education /></Page>} />
           <Route path="/education/:id" element={<Page><ArticleDetail /></Page>} />
           <Route path="/contact" element={<Page><Contact /></Page>} />

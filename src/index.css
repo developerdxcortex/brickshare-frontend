@@ -82,8 +82,83 @@ input[type="range"].brick-range::-moz-range-thumb {
 .forandnotbg{
   background-image: url('/images/who-brick.jpg');
 }
+
+/* Home: "Who BrickShare Capital is for / is not" — sabhi screens */
+
+/* phone (<768px): dono blocks ek ke neeche ek, spacing thodi kam */
+@media (max-width: 767px) {
+  .forandnot > .grid > div { padding-top: 3rem; padding-bottom: 3rem; }
+}
+
+/* tablet (768-1023px): 2 column tight hain, isliye padding aur heading size kam */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .forandnot .section { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .forandnot h2 { font-size: 1.5rem; }
+}
+
+/* laptop+ (1280px+): content ko baaki sections ke centered 80rem container se align karo */
+@media (min-width: 1280px) {
+  .forandnot .section { max-width: none; margin: 0; }
+  .forandnot > .grid > :first-child .section {
+    padding-left: calc((100vw - 80rem) / 2 + 2rem);
+    padding-right: 3rem;
+  }
+  .forandnot > .grid > :last-child .section {
+    padding-left: 3rem;
+    padding-right: calc((100vw - 80rem) / 2 + 2rem);
+  }
+  .forandnot .forandnotbg { background-position: center 35%; }
+}
+
+@media (min-width: 1536px) {
+  .forandnot > .grid > div { padding-top: 5rem; padding-bottom: 5rem; }
+}
+
+@media (min-width: 1920px) {
+  .forandnot h2 { font-size: 2.5rem; line-height: 1.2; }
+  .forandnot li span, .forandnot p { font-size: 1.0625rem; line-height: 1.6; }
+  .forandnot li { gap: 0.9rem; }
+  .forandnot li svg { width: 24px; height: 24px; }
+}
+
+@media (min-width: 2560px) {
+  .forandnot > .grid > div { padding-top: 7rem; padding-bottom: 7rem; }
+  .forandnot h2 { font-size: 3.25rem; line-height: 1.2; }
+  .forandnot li span, .forandnot p { font-size: 1.375rem; line-height: 1.6; }
+  .forandnot li { gap: 1.1rem; }
+  .forandnot li svg { width: 30px; height: 30px; }
+  .forandnot ul { margin-top: 2.25rem; }
+}
 .homelocal {
   background-image: url('/images/home-local.webp');
+}
+
+/* image (2160x701): buildings right side mein hain, isliye image hamesha right-bottom se lagti hai */
+section.homelocal {
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  display: flex;
+  align-items: center;
+}
+
+/* phone: text upar, image neeche poori dikhe */
+@media (max-width: 639px) {
+  section.homelocal { background-size: 170% auto; padding-bottom: 55vw; }
+}
+
+/* tablet: text upar, image neeche */
+@media (min-width: 640px) and (max-width: 1023px) {
+  section.homelocal { background-size: 110% auto; padding-bottom: 36vw; }
+}
+
+/* laptop / desktop: text left, image right */
+@media (min-width: 1024px) {
+  section.homelocal {
+    background-size: cover;
+    min-height: calc(100vw / 3.082); /* image upar/neeche se kabhi nahi kategi */
+    padding-bottom: 4rem;
+  }
+  section.homelocal > .section > :first-child { max-width: min(46%, 32rem); }
 }
 .footer-bg{
    background-image: url('/images/footer.webp');

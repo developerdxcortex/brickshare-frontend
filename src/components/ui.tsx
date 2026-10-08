@@ -67,27 +67,26 @@ export function ProjectCard({ p, index = 0 }: { p: PlanLike; index?: number }) {
     <motion.article
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
-      className="group h-full overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-black/5"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-black/5"
     >
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-48 shrink-0 overflow-hidden">
         <img
           src={p.image}
           alt={p.name}
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0.15")}
         />
-        <span className="absolute right-3 top-3 rounded-full bg-[#131627] uppercase  px-3 py-1 text-xs font-regular text-white">
-          {p.status}
-        </span>
       </div>
-      <div className="p-5">
-        <h3 className="text-xl font-semibold text-[#131627]">{p.name}</h3>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="line-clamp-2 min-h-[3.5rem] text-xl font-semibold text-[#131627]">
+          {p.name}
+        </h3>
         <p className="mt-1 flex items-center gap-1 text-sm text-[#121212] font-medium">
           <MapPin size={14} className="" /> {p.city}
         </p>
-        <p className="mt-1 text-sm font-regular text-[#D2990A]">{p.type}</p>
+        <p className="mt-1 line-clamp-1 text-sm font-regular text-[#D2990A]">{p.type}</p>
 
-        {typeof p.fundedPercent === "number" && (
+        {typeof p.fundedPercent === "number" && p.fundedPercent > 0 && (
           <div className="mt-4">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-cream">
               <div
@@ -99,14 +98,22 @@ export function ProjectCard({ p, index = 0 }: { p: PlanLike; index?: number }) {
           </div>
         )}
 
-        <div className="mt-4 flex items-end justify-between">
-          <div>
-            <p className="text-xl font-semibold text-[#D2990A]">{p.minInvestment}</p>
-            <p className="text-xs text-[#121212] font-regular">Min. Investment</p>
+        {/* Spacer pushes price row + CTA to the bottom of the card,
+            so all cards line up evenly regardless of title/type length */}
+        <div className="mt-auto">
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <p className="text-xl font-semibold text-[#D2990A]">{p.minInvestment}</p>
+              <p className="text-xs text-[#121212] font-regular">Min. Investment</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-semibold text-[#D2990A]">{p.targetReturn}</p>
+              <p className="text-xs text-[#121212] font-regular">Target Return</p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xl font-semibold text-[#D2990A]">{p.targetReturn}</p>
-            <p className="text-xs text-[#121212] font-regular">Target Return</p>
+
+          <div className="mt-4 flex w-fit items-center justify-center gap-1.5 rounded-full bg-[#131627] px-3 py-1.5 text-xs font-semibold text-[#FEDF27] shadow-[0px_4px_11.5px_0px_#988723] transition-transform group-hover:scale-[1.02]">
+            Explore <ArrowUpRight size={13} />
           </div>
         </div>
       </div>
@@ -114,15 +121,17 @@ export function ProjectCard({ p, index = 0 }: { p: PlanLike; index?: number }) {
   );
 
   return (
-    <Reveal delay={(index % 3) * 0.08}>
-      {id ? (
-        <Link to={`/projects/${id}`} className="block h-full">
-          {inner}
-        </Link>
-      ) : (
-        inner
-      )}
-    </Reveal>
+    <div className="flex h-full">
+      <Reveal delay={(index % 3) * 0.08} className="flex h-full w-full">
+        {id ? (
+          <Link to={`/projects/${id}`} className="block h-full w-full">
+            {inner}
+          </Link>
+        ) : (
+          inner
+        )}
+      </Reveal>
+    </div>
   );
 }
 
