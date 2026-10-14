@@ -64,7 +64,7 @@ export default function Reviews() {
 
         {reviews.length === 0 ? (
           <p className="mt-10 text-center text-ink/50">
-            No reviews yet — be the first to share.
+            No reviews yet, be the first to share.
           </p>
         ) : (
           <div className="mt-10 overflow-hidden">
@@ -94,7 +94,7 @@ export default function Reviews() {
                     </p>
                     <div className="mx-auto my-3 h-px w-full bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
                     <p className="mt-4 text-sm font-semibold text-[#131627]">
-                      — {t.name}
+                      {t.name}
                     </p>
                     {t.location && (
                       <p className="text-sm text-[#131627] font-semibold">

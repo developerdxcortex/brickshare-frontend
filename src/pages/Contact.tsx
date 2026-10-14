@@ -88,7 +88,7 @@ export default function Contact() {
                     disabled={busy || sent}
                     className="w-full rounded-full bg-[#131627] py-4 font-semibold text-[#FEDF27]  hover:opacity-90 border border-[#FEDF27] shadow-[0px_4px_11.5px_0px_#988723]"
                   >
-                    {sent ? "Inquiry Submitted ✓ — Check your inbox" : busy ? "Submitting…" : "Submit Inquiry"}
+                    {sent ? "Inquiry Submitted ✓, Check your inbox" : busy ? "Submitting…" : "Submit Inquiry"}
                   </motion.button>
                 </div>
               </div>

@@ -33,9 +33,9 @@ export const planDetailsExtra: PlanDetailExtra[] = [
     ],
     howItWorks: [
       { label: "6 Months → 15% ROI" },
-      { label: "6-Month Checkpoint" },
+      { label: "6 Month Checkpoint" },
       { label: "6 Months → 15% ROI" },
-      { label: "12-Month Completion" },
+      { label: "12 Month Completion" },
     ],
     options: [
       { title: "Fixed ROI", value: "15% + 15%" },
@@ -60,11 +60,11 @@ export const planDetailsExtra: PlanDetailExtra[] = [
     financials: [
       { label: "Gross Annual Rental Income", value: "$100,800" },
       { label: "Net Cash Flow (Annual)", value: "$70,560" },
-      { label: "Projected Equity Growth (5-Yr)", value: "$930,000" },
+      { label: "Projected Equity Growth (5 Yr)", value: "$930,000" },
     ],
     advantages: [
       "Stable cash flow",
-      "Long-term appreciation",
+      "Long term appreciation",
       "Multiple exit strategies",
       "Conservative underwriting",
       "Potential Opportunity Zone benefits",
@@ -75,10 +75,10 @@ export const planDetailsExtra: PlanDetailExtra[] = [
     snapshot: [
       { label: "Homes", value: "32" },
       { label: "Development", value: "$11.42M" },
-      { label: "Development Timeline", value: "18–24 Months" },
+      { label: "Development Timeline", value: "18 to 24 Months" },
       { label: "Hold Period", value: "5 Years" },
-      { label: "Est. 5-Year Sale Value", value: "$21.25M" },
-      { label: "Target IRR", value: "16–20%" },
+      { label: "Est. 5 Year Sale Value", value: "$21.25M" },
+      { label: "Target IRR", value: "16 to 20%" },
     ],
     phases: [
       { label: "Phase 1", detail: "4 Pilot Homes" },
@@ -94,8 +94,8 @@ export const planDetailsExtra: PlanDetailExtra[] = [
     ],
     returns: [
       { label: "Preferred Return", value: "8%" },
-      { label: "Target IRR", value: "16–20%" },
-      { label: "Equity Multiple", value: "1.8–2.3×" },
+      { label: "Target IRR", value: "16 to 20%" },
+      { label: "Equity Multiple", value: "1.8 to 2.3×" },
       { label: "Hold Period", value: "5 Years" },
     ],
   },

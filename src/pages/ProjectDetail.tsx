@@ -229,7 +229,7 @@ export default function ProjectDetail() {
               }}
             >
               Whether you're selling a house that needs work, looking for a finished home, or partnering
-              on a project — we'd like to hear about it.
+              on a project, we'd like to hear about it.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link to="/projects">

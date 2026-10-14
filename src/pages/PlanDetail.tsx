@@ -20,7 +20,7 @@ export default function PlanDetail() {
 
   useSeo({
     title: plan
-      ? `${plan.name} — ${plan.city} | BrickShare Capital`
+      ? `${plan.name}, ${plan.city} | BrickShare Capital`
       : "Investment Opportunity | BrickShare Capital",
     description: plan
       ? `${plan.name} in ${plan.city}. ${plan.type} · Min. investment ${plan.minInvestment} · Target return ${plan.targetReturn}. ${plan.tagline || ""}`.trim()
@@ -43,8 +43,8 @@ export default function PlanDetail() {
   const stats = [
     { icon: DollarSign, label: "Min. Investment", value: plan.minInvestment },
     { icon: TrendingUp, label: "Target Return", value: plan.targetReturn },
-    { icon: Building2, label: "Property Value", value: plan.propertyValue || "—" },
-    { icon: Clock, label: "Hold Period", value: plan.holdPeriod || "—" },
+    { icon: Building2, label: "Property Value", value: plan.propertyValue || "N/A" },
+    { icon: Clock, label: "Hold Period", value: plan.holdPeriod || "N/A" },
   ];
 
   return (
@@ -277,7 +277,7 @@ export default function PlanDetail() {
               <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-sm">
                 <Row label="Minimum" value={plan.minInvestment} />
                 <Row label="Target Return" value={plan.targetReturn} />
-                <Row label="Hold Period" value={plan.holdPeriod || "—"} />
+                <Row label="Hold Period" value={plan.holdPeriod || "N/A"} />
                 <Row label="Status" value={plan.status} />
               </div>
               <Link to="/contact" className="btn-gold mt-6 w-full">Request to Participate</Link>

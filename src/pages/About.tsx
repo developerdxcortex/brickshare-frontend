@@ -19,31 +19,31 @@ const values = [
   },
   {
     title: "Integrity",
-    desc: "Investor-first decision making, regulatory awareness, and ethical execution.",
+    desc: "Investor first decision making, regulatory awareness, and ethical execution.",
   },
   {
     title: "Community",
-    desc: "Building long-term value together through trusted partnerships and local market expertise.",
+    desc: "Building long term value together through trusted partnerships and local market expertise.",
   },
   {
     title: "Performance",
-    desc: "Focused on consistent, risk-adjusted returns backed by professional asset management.",
+    desc: "Focused on consistent, risk adjusted returns backed by professional asset management.",
   },
 ];
 
 const journey = [
   {
-    year: "2024 – Foundation",
+    year: "2024: Foundation",
     desc: "Brickshare Capital founded in Houston, Texas, with a focus on disciplined real estate investment strategies.",
     img: "/images/foundation.webp",
   },
   {
-    year: "2024 – Early Growth",
+    year: "2024: Early Growth",
     desc: "Initial projects launched, establishing strong investor relationships and operational frameworks.",
     img: "/images/early-growth.webp",
   },
   {
-    year: "2025 – Expansion",
+    year: "2025: Expansion",
     desc: "Scaling investment opportunities and partnerships while expanding reach beyond Houston.",
     img: "/images/expansion.webp",
   },
@@ -52,8 +52,8 @@ const whatWeDo = [
   "Curated real estate investment opportunities",
   "Capital structuring & deal syndication",
   "Portfolio asset management & optimization",
-  "Long-term wealth building strategies",
-  "Trusted, investor-centric service",
+  "Long term wealth building strategies",
+  "Trusted, investor centric service",
 ];
 
 export default function About() {
@@ -102,16 +102,16 @@ export default function About() {
               <div className="rounded-2xl border border-[#E4C300] bg-white p-6 shadow-[0px_-1px_18.9px_0px_#FEDF2733] sm:p-7">
                 <p className="text-sm leading-relaxed text-[#131627] sm:text-base">
                   Brickshare Capital is a real estate investment and capital
-                  management firm dedicated to making property-backed
-                  investments more transparent, accessible, and growth-driven.
-                  Based in Houston, Texas, we focus on identifying high-quality
+                  management firm dedicated to making property backed
+                  investments more transparent, accessible, and growth driven.
+                  Based in Houston, Texas, we focus on identifying high quality
                   real estate opportunities and structuring them into
-                  well-managed investment solutions for individuals, partners,
+                  well managed investment solutions for individuals, partners,
                   and institutions.
                 </p>
                 <p className="mt-4 text-sm leading-relaxed text-[#131627] sm:text-base">
                   Our approach blends deep market knowledge, disciplined risk
-                  management, and a long-term vision for value creation. Every
+                  management, and a long term vision for value creation. Every
                   decision we make is guided by data, integrity, and a
                   commitment to delivering sustainable returns.
                 </p>
@@ -129,12 +129,12 @@ export default function About() {
             {
               icon: "/images/our-mission.webp",
               title: "Our Mission",
-              desc: "To provide a secure, transparent, and professionally managed real estate investment platform that enables investors to participate in high-quality opportunities while generating long-term, sustainable returns.",
+              desc: "To provide a secure, transparent, and professionally managed real estate investment platform that enables investors to participate in high quality opportunities while generating long term, sustainable returns.",
             },
             {
               icon: "/images/our-vision.webp",
               title: "Our Vision",
-              desc: "To make real estate investing simple, trustworthy, and community-driven — empowering investors to grow wealth through property ownership with the same ease and confidence as any modern financial solution.",
+              desc: "To make real estate investing simple, trustworthy, and community driven, empowering investors to grow wealth through property ownership with the same ease and confidence as any modern financial solution.",
             },
           ].map((m, i) => (
             <Reveal key={m.title} delay={i * 0.1}>
@@ -351,7 +351,7 @@ export default function About() {
               />
               <div className="relative z-10 max-w-2xl">
                 <p className="text-lg leading-relaxed text-white font-regular">
-                  We don't just invest — we build partnerships. By combining
+                  We don't just invest, we build partnerships. By combining
                   thoughtful strategy with actionable insights, we help
                   investors navigate opportunities with confidence. Whether
                   you're growing your first portfolio or expanding a seasoned

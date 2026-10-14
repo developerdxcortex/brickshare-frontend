@@ -15,8 +15,8 @@ const stats = [
 const whatWeDo = [
   {
     icon: Building2,
-    title: "Ground-Up Construction",
-    desc: "Full vertical build capability — permitting, site work, framing and finish-out, delivered turnkey.",
+    title: "Ground Up Construction",
+    desc: "Full vertical build capability, permitting, site work, framing and finish out, delivered turnkey.",
   },
   {
     icon: Hammer,
@@ -26,7 +26,7 @@ const whatWeDo = [
   {
     icon: Home,
     title: "Designer Renovation",
-    desc: "Open-plan reconfiguration, custom millwork and premium finish specification.",
+    desc: "Open plan reconfiguration, custom millwork and premium finish specification.",
   },
   {
     icon: Wrench,
@@ -68,11 +68,11 @@ export default function OurWork() {
               Our <span className="text-gold-500">Work</span>
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-[#111111]">
-              Eight completed residential projects — from full designer renovations to ground-up
+              Eight completed residential projects, from full designer renovations to ground up
               construction.
             </p>
             <p className="mt-2 font-semibold text-[#131627]">
-              Oak Forest · Sunnyside · Houston · Stafford · Kingwood · Mid-Atlantic
+              Oak Forest · Sunnyside · Houston · Stafford · Kingwood · Mid Atlantic
             </p>
           </Reveal>
 
@@ -104,8 +104,8 @@ export default function OurWork() {
               We take houses from what they are to what they should have been.
             </p>
             <p className="mx-auto mt-4 max-w-3xl text-sm text-[#111111]">
-              Prominent Global Investments LLC is a Houston-based development and investment firm. We
-              renovate, rebuild and build from the ground up — and we carry every project ourselves, from
+              Prominent Global Investments LLC is a Houston based development and investment firm. We
+              renovate, rebuild and build from the ground up, and we carry every project ourselves, from
               acquisition through construction management to the day it's finished.
               <br />
               The eight projects below are completed work. Not renderings, not proposals. Everything you
@@ -224,7 +224,7 @@ export default function OurWork() {
         }}
       >
         Whether you're selling a house that needs work, looking for a finished home, or partnering
-        on a project — we'd like to hear about it.
+        on a project, we'd like to hear about it.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
