@@ -8,7 +8,7 @@ import { useAuth } from "../../lib/auth";
 import { useSeo } from "../../lib/seo";
 
 export default function AdminLogin() {
-  useSeo({ title: "Admin Login — BrickShare Capital", description: "Admin area.", noindex: true });
+  useSeo({ title: "Admin Login, BrickShare Capital", description: "Admin area.", noindex: true });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");

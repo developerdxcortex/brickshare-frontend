@@ -19,8 +19,8 @@ const reasons = [
   "Professionally vetted real estate projects",
   "Transparent financials and timelines",
   "Low minimum investment access",
-  "Focused on long-term, sustainable returns",
-  "Houston-centric market expertise",
+  "Focused on long term, sustainable returns",
+  "Houston centric market expertise",
 ];
 
 export default function Projects() {
@@ -57,7 +57,7 @@ export default function Projects() {
             </h2>
             <div className="mx-auto my-3 h-px w-2/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
             <p className="mx-auto mt-5 max-w-2xl text-center text-[#131627] font-regular">
-              Explore curated real-estate participation opportunities across Houston and Texas, with clear project information, investment structures and supporting documentation.
+              Explore curated real estate participation opportunities across Houston and Texas, with clear project information, investment structures and supporting documentation.
             </p>
           </Reveal>
 

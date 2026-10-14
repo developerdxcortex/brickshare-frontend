@@ -11,7 +11,7 @@ const steps = [
     n: 1,
     img: "/images/S1.webp",
     title: "Select an Investment Opportunity",
-    desc: "Browse our curated selection of Houston-based real estate projects. Every opportunity is carefully reviewed to ensure quality, transparency, and long-term potential.",
+    desc: "Browse our curated selection of Houston based real estate projects. Every opportunity is carefully reviewed to ensure quality, transparency, and long term potential.",
     label: "What we provide:",
     points: [
       "Independent property evaluations",
@@ -39,7 +39,7 @@ const steps = [
     n: 3,
     img: "/images/S3.webp",
     title: "Invest Securely via Escrow",
-    desc: "Once verified, you can invest securely through our escrow-backed process. Start small and grow your portfolio at your own pace.",
+    desc: "Once verified, you can invest securely through our escrow backed process. Start small and grow your portfolio at your own pace.",
     label: "Investment features:",
     points: [
       "Secure escrow fund protection",
@@ -56,7 +56,7 @@ const steps = [
     desc: "Monitor your investments through your personalized dashboard. Stay informed and in control of your portfolio performance.",
     label: "Investor dashboard includes:",
     points: [
-      "Real-time portfolio tracking",
+      "Real time portfolio tracking",
       "Monthly performance updates",
       "Distribution notifications",
       "Reinvestment or withdrawal options",
@@ -73,7 +73,7 @@ const benefits = [
   },
   {
     icon: BadgeCheck,
-    title: "Houston-Focused Properties",
+    title: "Houston Focused Properties",
     desc: "Invest in local projects you can understand and visit",
   },
   {
@@ -84,7 +84,7 @@ const benefits = [
   {
     icon: BadgeCheck,
     title: "Transparent Performance",
-    desc: "Clear reporting, updates, and real-time tracking",
+    desc: "Clear reporting, updates, and real time tracking",
   },
 ];
 
@@ -178,7 +178,7 @@ export default function HowItWorks() {
             </h2>
             <div className="mx-auto my-3 h-px w-2/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
             <p className="mt-5 py-3 text-center text-sm text-white font-regular">
-              All the benefits of real estate — without traditional barriers
+              All the benefits of real estate, without traditional barriers
             </p>
           </Reveal>
 
@@ -225,7 +225,7 @@ export default function HowItWorks() {
               Ready to Start Investing?
             </h2>
             <p className="mt-3 max-w-md text-[#131627] font-medium">
-              Join a growing community of investors building long-term wealth
+              Join a growing community of investors building long term wealth
               through real estate with Brickshare Capital.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">

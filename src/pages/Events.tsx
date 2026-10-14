@@ -23,7 +23,7 @@ import { api } from "../lib/api";
 import { useSeo, pageSeo } from "../lib/seo";
 
 /* ============================================================================
-   EVENTS PAGE  —  BrickShare Launch Evening  (single file)
+   EVENTS PAGE, BrickShare Launch Evening  (single file)
    ----------------------------------------------------------------------------
    SECTION 1: HERO  (scroll-scrubbed, 4 chapters, ek hi tower image ka drone shot)
    SECTION 2: MARQUEE strip
@@ -56,19 +56,19 @@ const IMG = {
   skyline: "",
 
   // ---- NEW SECTIONS ----
-  rightRoomMark: "/images/events/right-room-building.webp", // Section 5 — faint building logo (background)
-  experience: "/images/events/experience-food.webp", // Section 8 — food image
-  setting: "/images/events/setting-gallery-steps.webp", // Section 9 — full background
-  roomPeople: "/images/events/ideas-people.webp", // Section 10 — card 1
-  roomConversations: "/images/events/ideas-conversations.webp", // Section 10 — card 2
-  roomIdeas: "/images/events/ideas-ideas.webp", // Section 10 — card 3
-  roomFuture: "/images/events/ideas-future.webp", // Section 10 — card 4
-  invite: "/images/events/be-in-the-room.webp", // Section 11 — full background
+  rightRoomMark: "/images/events/right-room-building.webp", // Section 5, faint building logo (background)
+  experience: "/images/events/experience-food.webp", // Section 8, food image
+  setting: "/images/events/setting-gallery-steps.webp", // Section 9, full background
+  roomPeople: "/images/events/ideas-people.webp", // Section 10, card 1
+  roomConversations: "/images/events/ideas-conversations.webp", // Section 10, card 2
+  roomIdeas: "/images/events/ideas-ideas.webp", // Section 10, card 3
+  roomFuture: "/images/events/ideas-future.webp", // Section 10, card 4
+  invite: "/images/events/be-in-the-room.webp", // Section 11, full background
 };
 
 const EVENT = {
   date: "Thursday, December 3, 2026",
-  time: "6:00 PM — 9:00 PM",
+  time: "6:00 PM to 9:00 PM",
   venue: "The Cannon West Houston",
   address: "Gallery Steps · 1534 Brittmoore Rd, Suite 1000",
   note: "Limited guest list  ·  Food & beverages included  ·  RSVP required",
@@ -83,7 +83,7 @@ const chapters = [
     eyebrow: "BrickShare Capital presents",
     lead: "Something new",
     accent: "is taking shape.",
-    body: "An evening of real estate, entrepreneurship, and conversations that could lead somewhere — in the heart of Houston.",
+    body: "An evening of real estate, entrepreneurship, and conversations that could lead somewhere, in the heart of Houston.",
   },
   {
     nav: "The Room",
@@ -113,7 +113,7 @@ const chapters = [
 
 /* ---- Section 4: Why attend ---- */
 const REASONS = [
-  { n: "I", title: "Inside BrickShare", text: "Get an inside look at what we're building — and where we're going next." },
+  { n: "I", title: "Inside BrickShare", text: "Get an inside look at what we're building, and where we're going next." },
   { n: "II", title: "Meet the people", text: "Connect with founders, investors, operators, and professionals building Houston's future." },
   { n: "III", title: "Ideas that move markets", text: "Hear perspectives, ideas, and opportunities beyond the usual pitch. Real estate. Real talk." },
   { n: "IV", title: "An evening well spent", text: "Cocktails, curated bites, and conversations worth remembering long after the night ends." },
@@ -1096,7 +1096,7 @@ const css = `
 }
 
 /* =====================================================================
-   HERO RESPONSIVE — --hu = ek unit, sab text isi se scale hota hai
+   HERO RESPONSIVE, --hu = ek unit, sab text isi se scale hota hai
    ===================================================================== */
 .ev-hero{ --hu:clamp(7px, min(1.15vw, 1.7vh), 40px); }
 .ev-hero-pad{
@@ -1927,7 +1927,7 @@ function Room() {
               Some of the best opportunities don't begin in a boardroom. They begin with a conversation, a shared idea, or the right person across the room.
             </p>
             <p className="ev-room-p2 mt-6 max-w-[30rem]">
-              Join BrickShare Capital for an intimate evening bringing together investors, entrepreneurs, real estate professionals, and forward-thinking minds shaping what comes next.
+              Join BrickShare Capital for an intimate evening bringing together investors, entrepreneurs, real estate professionals, and forward thinking minds shaping what comes next.
             </p>
           </Rise>
           <Rise d={0.09}>
@@ -2183,7 +2183,7 @@ function Experience() {
           </h2>
 
           <p className="ev-xp-lead ev-xp-pop mt-8" style={d(0.5)}>
-            Curated bites. Crafted drinks. A beautiful setting — and a room filled with interesting people.
+            Curated bites. Crafted drinks. A beautiful setting, and a room filled with interesting people.
           </p>
 
           <div className="ev-xp-cols mt-8">
@@ -2391,7 +2391,7 @@ function IdeasMeetPeople() {
         <Rise d={0.04}>
           <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
             <p className="ev-ideas-p max-w-[34rem]">
-              Entrepreneurs, investors, builders — and people who believe the next opportunity could be sitting right beside them.
+              Entrepreneurs, investors, builders, and people who believe the next opportunity could be sitting right beside them.
             </p>
             <p className="ev-hint">
               Hover to pause · Drag to explore <ArrowRight size={12} />
@@ -2537,7 +2537,7 @@ function Sponsor() {
               <label className="ev-sp-label" htmlFor="sp-type">Sponsor type</label>
               <select id="sp-type" className="ev-sp-input ev-sp-select" value={plan} onChange={(e) => setPlan(e.target.value)}>
                 {SPONSOR_PLANS.map((p) => (
-                  <option key={p.key} value={p.key}>{p.label} — {p.price}</option>
+                  <option key={p.key} value={p.key}>{p.label}, {p.price}</option>
                 ))}
               </select>
 
@@ -2639,7 +2639,7 @@ function Invite() {
             RSVP <ArrowRight size={14} />
           </a>
           <p className="ev-invite-meta mt-5">
-            6:00 — 9:00 PM &nbsp;·&nbsp; The Cannon West Houston &nbsp;·&nbsp; Gallery Steps
+            6:00 to 9:00 PM &nbsp;·&nbsp; The Cannon West Houston &nbsp;·&nbsp; Gallery Steps
           </p>
         </Rise>
       </div>

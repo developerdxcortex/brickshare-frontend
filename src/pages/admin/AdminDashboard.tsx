@@ -17,7 +17,7 @@ import { useSeo } from "../../lib/seo";
 type Tab = "plans" | "articles" | "reviews" | "inquiries" | "sponsors";
 
 export default function AdminDashboard() {
-  useSeo({ title: "Admin Dashboard — BrickShare Capital", description: "Admin area.", noindex: true });
+  useSeo({ title: "Admin Dashboard, BrickShare Capital", description: "Admin area.", noindex: true });
   const [tab, setTab] = useState<Tab>("plans");
   const { logout } = useAuth();
 
@@ -132,8 +132,8 @@ function confirmDelete(msg: string) {
 
 /* ============================== PLANS ===================================== */
 const emptyPlan = {
-  name: "", city: "Houston, TX", type: "High-Rise Apartments", minInvestment: "$25,000",
-  targetReturn: "9-11% p.a.", status: "OPEN", image: "", imageKey: "", tagline: "",
+  name: "", city: "Houston, TX", type: "High Rise Apartments", minInvestment: "$25,000",
+  targetReturn: "9 to 11% p.a.", status: "OPEN", image: "", imageKey: "", tagline: "",
   description: "", propertyValue: "", holdPeriod: "", fundedPercent: 0,
   highlightsText: "", published: true, documents: [],
 };
@@ -224,15 +224,15 @@ function PlanForm({ initial, onClose, onSave }: { initial: any; onClose: () => v
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Name" value={f.name} onChange={set("name")} placeholder="Galleria Heights" />
           <Input label="City" value={f.city} onChange={set("city")} placeholder="Houston, TX" />
-          <Input label="Type" value={f.type} onChange={set("type")} placeholder="High-Rise Apartments" />
+          <Input label="Type" value={f.type} onChange={set("type")} placeholder="High Rise Apartments" />
           <Select label="Status" value={f.status} onChange={set("status")} options={["OPEN", "FUNDED", "CLOSED"]} />
           <Input label="Min. Investment" value={f.minInvestment} onChange={set("minInvestment")} placeholder="$25,000" />
-          <Input label="Target Return" value={f.targetReturn} onChange={set("targetReturn")} placeholder="9-11% p.a." />
+          <Input label="Target Return" value={f.targetReturn} onChange={set("targetReturn")} placeholder="9 to 11% p.a." />
           <Input label="Property Value" value={f.propertyValue} onChange={set("propertyValue")} placeholder="$18.4M" />
-          <Input label="Hold Period" value={f.holdPeriod} onChange={set("holdPeriod")} placeholder="3-5 years" />
+          <Input label="Hold Period" value={f.holdPeriod} onChange={set("holdPeriod")} placeholder="3 to 5 years" />
           <Input label="Funded %" type="number" value={String(f.fundedPercent)} onChange={set("fundedPercent")} placeholder="62" />
         </div>
-        <Input label="Tagline" value={f.tagline} onChange={set("tagline")} placeholder="Premium high-rise living in Uptown Houston" />
+        <Input label="Tagline" value={f.tagline} onChange={set("tagline")} placeholder="Premium high rise living in Uptown Houston" />
         <TextArea label="Description" value={f.description} onChange={set("description")} rows={4} />
         <TextArea label="Highlights" value={f.highlightsText} onChange={set("highlightsText")} rows={4}
           hint="Ek line me ek highlight likho (one per line)." />

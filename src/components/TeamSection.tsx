@@ -8,21 +8,21 @@ const LUMA_LINK = "https://luma.com/2cn4a2ir";
 const team = [
   {
     name: "Aziz Ross",
-    role: "Co-Founder | Managing Partner",
+    role: "Co Founder | Managing Partner",
     img: "/images/team/aziz-ross.jpeg",
-    bio: "A Morehouse College business graduate and serial entrepreneur, Aziz moved into full-time real estate investing in 2015 and has since built a multi-million-dollar business spanning residential acquisitions, renovations and flips, single-family rental portfolios, and new home construction. At BrickShare Capital, Aziz leads investment strategy with a focus on disciplined execution and long-term value creation.",
+    bio: "A Morehouse College business graduate and serial entrepreneur, Aziz moved into full time real estate investing in 2015 and has since built a multi million dollar business spanning residential acquisitions, renovations and flips, single family rental portfolios, and new home construction. At BrickShare Capital, Aziz leads investment strategy with a focus on disciplined execution and long term value creation.",
   },
   {
     name: "Mia Rose Greco",
-    role: "Co-Founder | Managing Partner",
+    role: "Co Founder | Managing Partner",
     img: "/images/team/mia-rose-greco.jpeg",
-    bio: "Mia Rose Greco leads strategic planning, investor relations, and operational oversight at BrickShare Capital. With a strong focus on transparency and trust, she ensures every investment opportunity aligns with the firm's values and long-term objectives.",
+    bio: "Mia Rose Greco leads strategic planning, investor relations, and operational oversight at BrickShare Capital. With a strong focus on transparency and trust, she ensures every investment opportunity aligns with the firm's values and long term objectives.",
   },
   {
     name: "Amit Dubey",
     role: "Serial Entrepreneur | Author | Global Business Strategist",
     img: "/images/team/amit-dubey.jpg",
-    bio: "Amit Dubey is a serial entrepreneur, author of From Dreams to Dollars, and a globally connected business leader with ventures across five countries, from technology and AI businesses to Dubai real estate. An avid world traveler with an international network, he brings innovation, market insight, and relationship-driven thinking to BrickShare Capital, connecting people, capital, and real estate opportunity for long-term wealth creation.",
+    bio: "Amit Dubey is a serial entrepreneur, author of From Dreams to Dollars, and a globally connected business leader with ventures across five countries, from technology and AI businesses to Dubai real estate. An avid world traveler with an international network, he brings innovation, market insight, and relationship driven thinking to BrickShare Capital, connecting people, capital, and real estate opportunity for long term wealth creation.",
   },
   {
     name: "Alfredo J. Salvi F.",
@@ -101,7 +101,7 @@ export default function TeamSection() {
               className="mx-auto max-w-[760px] text-base font-light leading-[1.4] text-[#111111BF] sm:text-[22px]"
               style={onest}
             >
-              The people behind BrickShare Capital — connecting people, capital,
+              The people behind BrickShare Capital, connecting people, capital,
               and real estate opportunity across markets.
             </p>
           </div>

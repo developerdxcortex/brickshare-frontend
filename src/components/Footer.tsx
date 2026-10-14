@@ -63,7 +63,7 @@ export default function Footer() {
           <div className="relative">
             <p className="text-2xl font-extralight leading-snug text-[#DEAB41] sm:text-3xl">
               Built for disciplined <br />
-              real-estate <br />
+              real estate <br />
               participation.
             </p>
             <svg

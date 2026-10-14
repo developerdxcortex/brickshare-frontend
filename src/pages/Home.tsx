@@ -102,12 +102,12 @@ function Hero() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mt-5 max-w-xl text-lg text-white"
           >
-            Provides access to curated real-estate participation opportunities
-            in Houston — designed for investors who value real assets, clear
-            information, and long-term thinking.
+            Provides access to curated real estate participation opportunities
+            in Houston, designed for investors who value real assets, clear
+            information, and long term thinking.
           </motion.p>
           <p className="mt-4 max-w-xl text-sm text-[#E4C300]">
-            Just disciplined exposure to property-backed projects.
+            Just disciplined exposure to property backed projects.
           </p>
 
           <motion.div
@@ -155,7 +155,7 @@ function FocusSection() {
       <div className="section">
         <Reveal>
           <h2 className="text-center text-2xl font-semibold text-[#E4C300] sm:text-3xl">
-            Houston-based. Asset-driven. Investor-first.
+            Houston based. Asset driven. Investor first.
           </h2>
 
           <div className="mx-auto my-3 h-px w-2/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
@@ -279,8 +279,8 @@ function Offers() {
   const items = [
     {
       icon: FileText,
-      title: "Real-Estate Participation Access",
-      desc: "Engage in Houston-based real estate projects alongside established operators.",
+      title: "Real Estate Participation Access",
+      desc: "Engage in Houston based real estate projects alongside established operators.",
     },
     {
       icon: Search,
@@ -290,7 +290,7 @@ function Offers() {
     {
       icon: DollarSign,
       title: "Thoughtful Capital Entry",
-      desc: "Participation begins at $2,500, aligned with long-term ownership mindset.",
+      desc: "Participation begins at $2,500, aligned with long term ownership mindset.",
     },
     {
       icon: Eye,
@@ -300,7 +300,7 @@ function Offers() {
     {
       icon: Shuffle,
       title: "Structured Capital Flow",
-      desc: "Participation is handled through project-specific documentation and arrangements.",
+      desc: "Participation is handled through project specific documentation and arrangements.",
     },
   ];
   return (
@@ -407,7 +407,7 @@ function HowItWorksMini() {
                 </h3>
                 <div className="mt-4 h-px w-1/2 bg-[#000000]" />
                 <p className="mt-1.5 text-sm text-[#111111] font-regular max-w-xs">
-                  Review available real-estate projects with detailed background
+                  Review available real estate projects with detailed background
                   information.
                 </p>
               </div>
@@ -697,11 +697,11 @@ function ForAndNot() {
   const forList = [
     "Want real estate exposure without active management",
     "Prefer local, tangible assets",
-    "Are comfortable with medium- to long-term participation",
+    "Are comfortable with medium to long term participation",
     "Understand that real estate carries market and execution risk",
   ];
   const notList = [
-    "Not a broker-dealer",
+    "Not a broker dealer",
     "Not an investment advisor",
     "Not a crowdfunding portal",
     "Not a public solicitation platform",
@@ -779,10 +779,10 @@ function LocalFocus() {
       <div className="section relative z-10 py-16 items-center ">
         <Reveal>
           <h2 className="text-3xl font-semibold text-[#131627] sm:text-4xl">
-            Local focus. Long-term perspective.
+            Local focus. Long term perspective.
           </h2>
           <p className="mt-4  font-regular text-[#131627]">
-            Houston remains one of the most resilient and diverse real-estate
+            Houston remains one of the most resilient and diverse real estate
             markets in the U.S.
           </p>
           <p className="mt-2 text-sm text-[#152FC2] font-semibold">
@@ -958,7 +958,7 @@ function GetInTouch() {
         disabled={busy || sent}
         className="w-full rounded-full bg-[#131627] border border-[#FEDF27] py-3.5 font-regular text-[#FEDF27] shadow-gold transition-colors hover:opacity-90 disabled:opacity-60"
       >
-        {sent ? "Sent ✓ — Check your inbox" : busy ? "Sending…" : "Get Started"}
+        {sent ? "Sent ✓, Check your inbox" : busy ? "Sending…" : "Get Started"}
       </button>
     </div>
   </div>
