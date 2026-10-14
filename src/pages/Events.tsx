@@ -122,10 +122,10 @@ const REASONS = [
 /* ---- Section 6: People ---- */
 // photo: "" chhodoge to initials wala arch card dikhega. Photo lagani ho to webp path daalo.
 const PEOPLE = [
-  { initials: "AD", name: "Amit Dubey", role: "Founder & Investor", photo: "" },
-  { initials: "MR", name: "Mia Rose", role: "Strategy & Partnerships", photo: "" },
-  { initials: "AR", name: "Aziz Ross", role: "Real Estate & Investments", photo: "" },
-  { initials: "AS", name: "Alfredo J. Salvi F", role: "Business Development", photo: "" },
+  { initials: "AD", name: "Amit Dubey", role: "Founder & Investor", photo: "/images/events/people-amit-dubey.png" },
+  { initials: "MR", name: "Mia Rose", role: "Strategy & Partnerships", photo: "/images/events/people-mia-rose.png" },
+  { initials: "AR", name: "Aziz Ross", role: "Real Estate & Investments", photo: "/images/events/people-aziz-ross.png" },
+  { initials: "AS", name: "Alfredo J. Salvi F", role: "Business Development", photo: "/images/events/people-alfredo-salvi.png" },
 ];
 
 /* ---- Section 7: Evening timeline ---- */
@@ -595,6 +595,8 @@ const css = `
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
   transform:scale(1.15); transition:transform 1.8s cubic-bezier(.22,1,.36,1) var(--d);
 }
+  /* photo me arch + gold border pehle se baked hai, isliye CSS ka border/background hata do */
+.ev-person-arch--photo{ border:none; border-radius:0; background:transparent; }
 .ev-person-initials{
   display:inline-block; position:relative;
   font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
@@ -627,10 +629,11 @@ const css = `
   font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
   letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-500);
 }
+.ev-person-row{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 12px; }
 .ev-person-link{
-  display:inline-flex; align-items:center; gap:6px;
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:14px; line-height:1.6; letter-spacing:0;
-  color:var(--ev-ivory-muted); transition:color .3s ease;
+  display:inline-flex; align-items:center; gap:6px; margin-left:auto; white-space:nowrap;
+  font-family:'Montserrat',sans-serif; font-weight:500; font-size:13px; line-height:1.6; letter-spacing:0;
+  color:var(--ev-gold-500); transition:color .3s ease;
 }
 .ev-person-link svg{ transition:transform .3s ease; }
 .ev-person-link:hover{ color:var(--ev-gold-300); }
@@ -2023,7 +2026,7 @@ function PersonCard({ p, i }: { p: (typeof PEOPLE)[number]; i: number }) {
       className="ev-person"
       style={{ "--d": `${i * 0.12}s` } as CSSProperties}
     >
-      <div className="ev-person-arch">
+      <div className={`ev-person-arch${p.photo ? " ev-person-arch--photo" : ""}`}>
         {p.photo ? (
           <img src={p.photo} alt={p.name} loading="lazy" decoding="async" draggable={false} />
         ) : (
@@ -2034,11 +2037,12 @@ function PersonCard({ p, i }: { p: (typeof PEOPLE)[number]; i: number }) {
         )}
       </div>
       <div className="ev-person-meta">
-        <h3 className="ev-person-name mt-5">{p.name}</h3>
-        <p className="ev-person-role mt-2">{p.role}</p>
-        <a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className="ev-person-link mt-3">
-          Meet them <ArrowRight size={12} />
-        </a>
+        <div className="ev-person-row mt-5">
+          <h3 className="ev-person-name">{p.name}</h3>
+          <a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className="ev-person-link">
+            Meet them <ArrowRight size={12} />
+          </a>
+        </div>
       </div>
     </article>
   );

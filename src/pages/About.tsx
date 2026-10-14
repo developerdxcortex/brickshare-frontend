@@ -2,13 +2,12 @@ import { motion } from "framer-motion";
 import {
   Users,
   Check,
-  Linkedin,
-  Instagram,
   CheckCheckIcon,
   ArrowUpRight,
 } from "lucide-react";
 import { PageHero, CTAButton } from "../components/ui";
 import Reveal from "../components/Reveal";
+import TeamSection from "../components/TeamSection";
 import { images } from "../config/site";
 import { Link } from "react-router-dom";
 import { useSeo, pageSeo } from "../lib/seo";
@@ -49,19 +48,6 @@ const journey = [
     img: "/images/expansion.webp",
   },
 ];
-const founders = [
-  {
-    name: "Mia Rose Greco",
-    role: "Co-Founder | Managing Partner",
-    bio: "Mia Rose Greco leads strategic planning, investor relations, and operational oversight at Brickshare Capital. With a strong focus on transparency and trust, she ensures every investment opportunity aligns with the firm's values and long-term objectives.",
-  },
-  {
-    name: "Aziz Ross",
-    role: "Co-Founder | Managing Partner",
-    bio: "Aziz leads investment strategy, deal evaluation, and capital deployment. His execution-driven and analytical approach helps identify opportunities that deliver strong, risk-adjusted performance while maintaining disciplined asset management.",
-  },
-];
-
 const whatWeDo = [
   "Curated real estate investment opportunities",
   "Capital structuring & deal syndication",
@@ -89,30 +75,32 @@ export default function About() {
 
       {/* Intro */}
       <section className="bg-[linear-gradient(180deg,#FFFFFF_16.53%,#FFE7BA_101.29%)] py-10 lg:py-16">
-        <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-          {/* Image — desktop pe right shift, rounded corners */}
-          <div className="relative overflow-hidden rounded-3xl lg:ml-[30%]">
-            <img
-              src={images.aboutIntro}
-              alt="Houston skyline"
-              className="h-80 w-full object-cover sm:h-96 lg:h-[480px]"
-              onError={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.opacity = "0.2")
-              }
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent" />
-            <p className="absolute bottom-6 right-6 text-right text-xl font-semibold text-gold-400 sm:bottom-8 sm:right-8 sm:text-2xl">
-              Born in Houston. Built for Smart,
-              <br />
-              Everyday Investors.
-            </p>
-          </div>
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          {/* Mobile/tablet: image upar, card neeche overlap ke saath.
+              Desktop (lg+): 20-col grid, card left + image right, beech me overlap */}
+          <div className="lg:grid lg:items-stretch lg:[grid-template-columns:repeat(20,minmax(0,1fr))]">
+            {/* Image */}
+            <div className="relative overflow-hidden rounded-3xl lg:[grid-column:7/21] lg:[grid-row:1] lg:min-h-[520px] xl:min-h-[480px]">
+              <img
+                src={images.aboutIntro}
+                alt="Houston skyline"
+                className="h-72 w-full object-cover sm:h-96 lg:absolute lg:inset-0 lg:h-full"
+                onError={(e) =>
+                  ((e.currentTarget as HTMLImageElement).style.opacity = "0.2")
+                }
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent" />
+              <p className="absolute bottom-5 left-5 right-5 text-right text-lg font-semibold leading-snug text-gold-400 sm:bottom-8 sm:right-8 sm:left-auto sm:text-2xl">
+                Born in Houston. Built for Smart,
+                <br />
+                Everyday Investors.
+              </p>
+            </div>
 
-          {/* Card — mobile pe image ke neeche thoda overlap, desktop pe image-left ke upar */}
-          <div className="relative z-10 mt-6 lg:absolute lg:inset-y-0 lg:left-0 lg:mt-0 lg:flex lg:w-[48%] lg:items-center lg:pl-0 lg:pr-6">
-            <Reveal>
-              <div className="rounded-2xl border border-[#E4C300] bg-white p-7 shadow-[0px_-1px_18.9px_0px_#FEDF2733]">
-                <p className="text-[#131627]">
+            {/* Card */}
+            <Reveal className="relative z-10 mx-3 -mt-10 sm:mx-8 lg:[grid-column:1/11] lg:[grid-row:1] lg:mx-0 lg:my-10 lg:self-center xl:[grid-column:1/10]">
+              <div className="rounded-2xl border border-[#E4C300] bg-white p-6 shadow-[0px_-1px_18.9px_0px_#FEDF2733] sm:p-7">
+                <p className="text-sm leading-relaxed text-[#131627] sm:text-base">
                   Brickshare Capital is a real estate investment and capital
                   management firm dedicated to making property-backed
                   investments more transparent, accessible, and growth-driven.
@@ -121,7 +109,7 @@ export default function About() {
                   well-managed investment solutions for individuals, partners,
                   and institutions.
                 </p>
-                <p className="mt-4 text-[#131627]">
+                <p className="mt-4 text-sm leading-relaxed text-[#131627] sm:text-base">
                   Our approach blends deep market knowledge, disciplined risk
                   management, and a long-term vision for value creation. Every
                   decision we make is guided by data, integrity, and a
@@ -293,74 +281,8 @@ export default function About() {
         </div>
       </section>
 
-      {/* Leadership */}
-      <section className="bg-white py-16">
-        <div className="section">
-          <Reveal>
-            <h2 className="text-center text-3xl font-semibold text-[#131627]">
-              Leadership <span className="text-[#E4C300]">Team</span>
-            </h2>
-            <div className="mx-auto my-3 h-px w-2/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
-          </Reveal>
-
-          <div className="mt-10 grid items-center gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-            <Reveal>
-              <div className="overflow-hidden rounded-2xl shadow-card">
-                <img
-                  src={images.aboutFounders}
-                  alt="Founders"
-                  className="h-72 w-full object-cover sm:h-96"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.opacity =
-                      "0.2")
-                  }
-                />
-              </div>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <div className="text-left">
-                <div className="inline-block rounded-[50%] border-2 border-[#E4C300] px-12 py-5">
-                  <p className="text-lg font-semibold tracking-wide">
-                    <span className="text-[#E4C300]">OUR</span>{" "}
-                    <span className="text-[#131627]">FOUNDER'S</span>
-                  </p>
-                </div>
-                <p className="mt-4 text-[#111111] font-light">
-                  Experienced founders committed to your success
-                </p>
-              </div>
-            </Reveal>
-          </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {founders.map((f, i) => (
-              <Reveal key={f.name} delay={i * 0.1}>
-                <div className="rounded-2xl bg-[#FFF4E0] p-7">
-                  <div className="my-2 h-px max-w-xs bg-[linear-gradient(90deg,rgba(19,22,39,0)_0%,#131627_47.6%,rgba(19,22,39,0)_100%)]" />
-                  <h3 className="pb-2 text-3xl font-semibold text-[#152FC2]">
-                    {f.name}
-                  </h3>
-                  <div className="my-2 h-px max-w-xs bg-[linear-gradient(90deg,rgba(19,22,39,0)_0%,#131627_47.6%,rgba(19,22,39,0)_100%)]" />
-                  <p className="mt-2 text-sm font-regular py-3 text-[#111111]">
-                    {f.role}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-[#111111] font-regular">
-                    {f.bio}
-                  </p>
-                  <div className="mt-4 py-3 flex items-center justify-end gap-3">
-                    <a className="grid h-8 w-8 place-items-center" href="#">
-                      <Linkedin size={20} />
-                    </a>
-                    <a className="grid h-8 w-8 place-items-center" href="#">
-                      <Instagram size={20} />
-                    </a>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Team */}
+      <TeamSection />
 
       {/* What we do */}
       <div className="">
