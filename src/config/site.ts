@@ -25,6 +25,7 @@ export const images = {
   heroEducation: "/images/hero-education.webp",
   heroContact: "/images/contact-building.webp",
   heroOurWork: "/images/hero-ourwork.webp",
+  heroGallery: "/images/hero-ourwork.webp", // TODO: replace with a gallery-specific hero image
   heroEvents: "/images/hero-home.webp", // TODO: replace with an events-specific image
 
   homeFocus: "/images/home-focus.webp",

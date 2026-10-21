@@ -6,6 +6,7 @@ const platform = [
   { to: "/projects", label: "Projects" },
   { to: "/how-it-works", label: "How It Works" },
   { to: "/about", label: "About" },
+  { to: "/gallery", label: "Gallery" },
   { to: "/education", label: "Education" },
 ];
 const legal = [
