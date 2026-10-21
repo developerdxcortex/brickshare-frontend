@@ -23,6 +23,9 @@ import {
 } from "../components/ui";
 import Reveal from "../components/Reveal";
 import Reviews from "../components/Reviews";
+import Lightbox from "../components/Lightbox";
+import GalleryTile from "../components/GalleryTile";
+import type { GalleryItem } from "../lib/api";
 import { images, contact } from "../config/site";
 import { api } from "../lib/api";
 import { Link } from "react-router-dom";
@@ -43,6 +46,7 @@ export default function Home() {
       <HowItWorksMini />
       <ROICalculator />
       <ForAndNot />
+      <GalleryPreview />
       <LocalFocus />
       <Reviews />
       <GetInTouch />
@@ -768,6 +772,63 @@ function ForAndNot() {
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+/* ---------------------------- GALLERY PREVIEW ----------------------------- */
+// 6 photos on Home ("Show on Home" ones first, set in admin). The rest live on /gallery.
+function GalleryPreview() {
+  const [items, setItems] = useState<GalleryItem[] | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.getGallery("gallery", { home: true, limit: 6 }).then(setItems).catch(() => setItems([]));
+  }, []);
+
+  // Hide the section entirely when there are no photos
+  if (items && items.length === 0) return null;
+
+  return (
+    <section className="bg-[linear-gradient(180deg,_#FFFFFF_0%,_#FFE7BA_100%)] py-16 sm:py-20">
+      <div className="section">
+        <Reveal className="text-center">
+          <h2 className="text-3xl font-semibold text-[#131627] sm:text-4xl">
+            Our <span className="text-[#E4C300]">Gallery</span>
+          </h2>
+          <div className="mx-auto my-4 h-px w-1/3 bg-[linear-gradient(90deg,rgba(228,195,0,0)_0%,#E4C300_47.6%,rgba(228,195,0,0)_100%)]" />
+          <p className="mx-auto max-w-2xl text-[#131627]">
+            A glimpse of the homes we have renovated, rebuilt and delivered across Houston.
+          </p>
+        </Reveal>
+
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+          {(items ?? (Array.from({ length: 6 }, () => null) as (GalleryItem | null)[])).map((p, i) => (
+            <Reveal key={p?._id || i} delay={(i % 3) * 0.06} className="aspect-[4/3]">
+              {p ? (
+                <GalleryTile item={p} onOpen={() => setOpen(i)} />
+              ) : (
+                <div className="h-full w-full animate-pulse rounded-2xl bg-gold-400/15" />
+              )}
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Link to="/gallery">
+            <motion.span
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center gap-2 rounded-full border border-[#FEDF27] bg-[#131627] px-6 py-3 text-sm font-semibold text-[#FEDF27] shadow-[0px_4px_11.5px_0px_#988723]"
+            >
+              <ArrowUpRight size={18} />
+              View Full Gallery
+            </motion.span>
+          </Link>
+        </div>
+      </div>
+
+      <Lightbox items={items || []} index={open} onClose={() => setOpen(null)} onIndex={setOpen} />
     </section>
   );
 }

@@ -12,6 +12,7 @@ import Projects from "./pages/Projects";
 import PlanDetail from "./pages/PlanDetail";
 import OurWork from "./pages/OurWork";
 import ProjectDetail from "./pages/ProjectDetail";
+import Gallery from "./pages/Gallery";
 import Events from "./pages/Events";
 import Education from "./pages/Education";
 import ArticleDetail from "./pages/ArticleDetail";
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/projects/:id" element={<Page><PlanDetail /></Page>} />
           <Route path="/our-work" element={<Page><OurWork /></Page>} />
           <Route path="/our-work/:slug" element={<Page><ProjectDetail /></Page>} />
+          <Route path="/gallery" element={<Page><Gallery /></Page>} />
           <Route path="/events" element={<Page><Events /></Page>} />
           <Route path="/education" element={<Page><Education /></Page>} />
           <Route path="/education/:id" element={<Page><ArticleDetail /></Page>} />

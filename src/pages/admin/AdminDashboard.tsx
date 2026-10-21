@@ -3,18 +3,19 @@ import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   Building2, Newspaper, MessageSquareQuote, Inbox, LogOut, Plus, Pencil, Trash2,
-  Eye, EyeOff, Home, Star, Award, Check,
+  Eye, EyeOff, Home, Star, Award, Check, Images,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { Loader } from "../../components/ui";
 import { Input, TextArea, Select, Modal } from "../../components/admin/fields";
 import ImageUpload from "../../components/admin/ImageUpload";
 import DocumentUpload from "../../components/admin/DocumentUpload";
+import GalleryManager from "../../components/admin/GalleryManager";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useSeo } from "../../lib/seo";
 
-type Tab = "plans" | "articles" | "reviews" | "inquiries" | "sponsors";
+type Tab = "plans" | "articles" | "reviews" | "inquiries" | "sponsors" | "gallery";
 
 export default function AdminDashboard() {
   useSeo({ title: "Admin Dashboard, BrickShare Capital", description: "Admin area.", noindex: true });
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const tabs: { key: Tab; label: string; icon: any }[] = [
     { key: "plans", label: "Plans / Projects", icon: Building2 },
     { key: "articles", label: "Articles", icon: Newspaper },
+    { key: "gallery", label: "Gallery", icon: Images },
     { key: "reviews", label: "Reviews", icon: MessageSquareQuote },
     { key: "inquiries", label: "Inquiries", icon: Inbox },
     { key: "sponsors", label: "Sponsors", icon: Award },
@@ -95,6 +97,7 @@ export default function AdminDashboard() {
           {tab === "reviews" && <ReviewsManager />}
           {tab === "inquiries" && <InquiriesManager />}
           {tab === "sponsors" && <SponsorsManager />}
+          {tab === "gallery" && <GalleryManager />}
         </div>
       </main>
     </div>

@@ -75,12 +75,13 @@ export default function Reviews() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
                 transition={{ duration: 0.45 }}
-                className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                // flex + justify-center: if the last page has only 1 or 2 cards, they sit in the center
+                className="flex flex-wrap justify-center gap-6"
               >
                 {visible.map((t) => (
                   <div
                     key={t._id}
-                    className="flex h-full flex-col rounded-2xl bg-[linear-gradient(90deg,_#FDFCFB_0%,_#E2D1C3_100%)] p-6  border border-[#E4C300]"
+                    className="flex w-full flex-col rounded-2xl bg-[linear-gradient(90deg,_#FDFCFB_0%,_#E2D1C3_100%)] p-6 border border-[#E4C300] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
                   >
                     {t.rating ? (
                       <div className="mb-2 flex gap-0.5 text-gold-500">

@@ -6,6 +6,19 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t);
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
 
+export type GalleryType = "gallery" | "beforeAfter";
+export type GalleryItem = {
+  _id: string;
+  url: string;
+  key?: string;
+  type: GalleryType;
+  title?: string;
+  order: number;
+  showOnHome: boolean;
+  published: boolean;
+  createdAt?: string;
+};
+
 async function request<T = any>(
   path: string,
   options: RequestInit & { auth?: boolean } = {}
@@ -79,6 +92,31 @@ export const api = {
     request(`/api/sponsors/${id}`, { method: "PUT", body: JSON.stringify(body), auth: true }),
   deleteSponsor: (id: string) => request(`/api/sponsors/${id}`, { method: "DELETE", auth: true }),
   
+  // --- Gallery ---
+  getGallery: (type: GalleryType = "gallery", opts: { home?: boolean; limit?: number } = {}) => {
+    const q = new URLSearchParams({ type });
+    if (opts.home) q.set("home", "1");
+    if (opts.limit) q.set("limit", String(opts.limit));
+    return request<GalleryItem[]>(`/api/gallery?${q}`);
+  },
+  adminGallery: () => request<GalleryItem[]>("/api/gallery/admin/all", { auth: true }),
+  uploadGalleryBulk: (files: File[], type: GalleryType) => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append("files", f));
+    fd.append("type", type);
+    return request<{ created: GalleryItem[]; failed: { name: string; error: string }[] }>(
+      "/api/gallery/bulk",
+      { method: "POST", body: fd, auth: true }
+    );
+  },
+  updateGallery: (id: string, body: Partial<GalleryItem>) =>
+    request<GalleryItem>(`/api/gallery/${id}`, { method: "PUT", body: JSON.stringify(body), auth: true }),
+  reorderGallery: (ids: string[]) =>
+    request("/api/gallery/reorder", { method: "PUT", body: JSON.stringify({ ids }), auth: true }),
+  deleteGallery: (id: string) => request(`/api/gallery/${id}`, { method: "DELETE", auth: true }),
+  bulkDeleteGallery: (ids: string[]) =>
+    request("/api/gallery/bulk-delete", { method: "POST", body: JSON.stringify({ ids }), auth: true }),
+
   // --- Upload (S3) ---
   upload: async (file: File, folder = "uploads") => {
     const fd = new FormData();
