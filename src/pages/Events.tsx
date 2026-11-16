@@ -2,2426 +2,1686 @@ import {
   useEffect,
   useRef,
   useState,
-  type ReactNode,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
+  type ElementType,
+  type KeyboardEvent,
+  type ReactNode,
 } from "react";
-import {
-  motion,
-  AnimatePresence,
-  useInView,
-  useScroll,
-  useTransform,
-  useMotionTemplate,
-  useMotionValueEvent,
-  transform,
-  useReducedMotion,
-  type MotionValue,
-} from "framer-motion";
-import { ArrowRight, Check, X } from "lucide-react";
-import { api } from "../lib/api";
 import { useSeo, pageSeo } from "../lib/seo";
+import { api } from "../lib/api";
 
 /* ============================================================================
-   EVENTS PAGE, BrickShare Launch Evening  (single file)
+   EVENTS PAGE — BrickShare Capital Launch Evening (single file; sirf Sponsor form backend use karta hai)
    ----------------------------------------------------------------------------
-   SECTION 1: HERO  (scroll-scrubbed, 4 chapters, ek hi tower image ka drone shot)
-   SECTION 2: MARQUEE strip
-   SECTION 3: A ROOM FULL OF POSSIBILITIES      (scene)
-   SECTION 4: WHY ATTEND                        (scene)
-   SECTION 5: THE RIGHT ROOM CAN CHANGE EVERYTHING (scene)
-   SECTION 6: THE PEOPLE BEHIND IT              (scene)
-   SECTION 7: THE EVENING  (timeline, sticky heading + blur reveal)
-   SECTION 8: THE EXPERIENCE                    (scene)
-   SECTION 9: THE SETTING                       (scene)
-   SECTION 10: THE ROOM  (drag carousel)        (scene)
-   SECTION 11: YOU'RE INVITED                   (scene)
+   1. HERO                       "Something new is taking shape."
+   2. A ROOM FULL OF POSSIBILITIES
+   3. MEET THE PEOPLE BEHIND IT
+   4. THE RIGHT ROOM CAN CHANGE EVERYTHING
+   5. FOUR REASONS TO BE IN THE ROOM
+   6. THE EVENING, HOUR BY HOUR  (carousel)
+   7. SPONSORSHIP                "Put your brand in the room." (backend: POST /api/sponsors)
+   8. THE INVITATION             "Be in the room."
+   (Navbar + Footer site ke common components hain, page ke bahar.)
 
-   NOTE: Section 3 -> 11 ab pin nahi hote. Section screen me aate hi content
-   ek baar blur + rise + fade se aata hai aur phir tika rehta hai.
+   Event ki date / venue / RSVP link sirf EVENT object me badlo —
+   poore page me wahi se aata hai.
+   Animations: plain CSS + IntersectionObserver (koi extra library nahi).
    ========================================================================== */
 
-/* ------------------------------ DATA --------------------------------------- */
-const IMG = {
-  arrival: "/images/events/journey-1-arrival.webp",
-  room: "/images/events/journey-2-room.webp",
-  idea: "/images/events/journey-3-idea.webp",
-  invitation: "/images/events/journey-4-invitation.webp",
-  badge: "/images/events/rotating-badge.webp",
-  roomArch: "/images/events/room-possibilities.webp",
-  // Hero ki single tower image (high-res, 3000px+ wide rakho)
-  heroTower: "/images/events/hero-tower.webp",
-  // Hero ke end wali finale image. Apni file ka path yahan likho
-  // (khaali "" chhodoge to finale layer skip ho jayega).
-  skyline: "",
-
-  // ---- NEW SECTIONS ----
-  rightRoomMark: "/images/events/right-room-building.webp", // Section 5, faint building logo (background)
-  experience: "/images/events/experience-food.webp", // Section 8, food image
-  setting: "/images/events/setting-gallery-steps.webp", // Section 9, full background
-  roomPeople: "/images/events/ideas-people.webp", // Section 10, card 1
-  roomConversations: "/images/events/ideas-conversations.webp", // Section 10, card 2
-  roomIdeas: "/images/events/ideas-ideas.webp", // Section 10, card 3
-  roomFuture: "/images/events/ideas-future.webp", // Section 10, card 4
-  invite: "/images/events/be-in-the-room.webp", // Section 11, full background
-};
-
+/* ------------------------------ EVENT DATA --------------------------------- */
 const EVENT = {
-  date: "Thursday, December 3, 2026",
-  time: "6:00 PM to 9:00 PM",
+  date: "14 Jan 2027", // poore page pe yahi date
+  day: "Thursday",
+  time: "6:00 — 9:00 PM",
   venue: "The Cannon West Houston",
-  address: "Gallery Steps · 1534 Brittmoore Rd, Suite 1000",
-  note: "Limited guest list  ·  Food & beverages included  ·  RSVP required",
-  handwritten: "Be there when it begins.",
+  place: "Gallery Steps",
+  address: "1334 Brittmoore Rd, Suite 1008",
+  shortAddress: "1334 Brittmoore Rd, Houston",
+  guestList: "Limited · RSVP required",
+  rsvpLink: "https://luma.com/2cn4a2ir", // page ke saare buttons (Reserve, About the evening, Meet them) yahi link kholte hain
 };
 
-// Hero chapters — har chapter = ek text block (image ab ek hi hai: IMG.heroTower)
-const chapters = [
-  {
-    nav: "Arrival",
-    image: IMG.arrival,
-    eyebrow: "BrickShare Capital presents",
-    lead: "Something new",
-    accent: "is taking shape.",
-    body: "An evening of real estate, entrepreneurship, and conversations that could lead somewhere, in the heart of Houston.",
-  },
-  {
-    nav: "The Room",
-    image: IMG.room,
-    eyebrow: "More than an event",
-    lead: "A room full of",
-    accent: "possibilities.",
-    body: "The best opportunities don't begin in a boardroom. They begin with a conversation, a shared idea, or the right person across the room.",
-  },
-  {
-    nav: "The Idea",
-    image: IMG.idea,
-    eyebrow: "One introduction. One conversation. One idea.",
-    lead: "The right room",
-    accent: "can change everything.",
-    body: "You never know what comes next. That is exactly why you should be there when it does.",
-  },
-  {
-    nav: "Invitation",
-    image: IMG.invitation,
-    eyebrow: "The Cannon West Houston · Gallery Steps",
-    lead: "Be there",
-    accent: "before the story begins.",
-    body: "Limited guest list. Food and beverages included. RSVP required.",
-  },
-];
+const IMG = {
+  hero: "/images/events/hero-house.webp",
+  room: "/images/events/room-networking.webp",
+  right: [
+    "/images/events/rr-1.webp",
+    "/images/events/rr-2.webp",
+    "/images/events/rr-3.webp",
+    "/images/events/rr-4.webp",
+  ],
+  invite: "/images/events/evening-launch.webp",
+};
 
-/* ---- Section 4: Why attend ---- */
-const REASONS = [
-  { n: "I", title: "Inside BrickShare", text: "Get an inside look at what we're building, and where we're going next." },
-  { n: "II", title: "Meet the people", text: "Connect with founders, investors, operators, and professionals building Houston's future." },
-  { n: "III", title: "Ideas that move markets", text: "Hear perspectives, ideas, and opportunities beyond the usual pitch. Real estate. Real talk." },
-  { n: "IV", title: "An evening well spent", text: "Cocktails, curated bites, and conversations worth remembering long after the night ends." },
-];
-
-/* ---- Section 6: People ---- */
-// photo: "" chhodoge to initials wala arch card dikhega. Photo lagani ho to webp path daalo.
 const PEOPLE = [
-  { initials: "AD", name: "Amit Dubey", role: "Founder & Investor", photo: "/images/events/people-amit-dubey.png" },
-  { initials: "MR", name: "Mia Rose", role: "Strategy & Partnerships", photo: "/images/events/people-mia-rose.png" },
-  { initials: "AR", name: "Aziz Ross", role: "Real Estate & Investments", photo: "/images/events/people-aziz-ross.png" },
-  { initials: "AS", name: "Alfredo J. Salvi F", role: "Business Development", photo: "/images/events/people-alfredo-salvi.png" },
+  { name: "Amit Dubey", photo: "/images/team/amit-dubey.jpg", pos: "50% 15%" },
+  { name: "Mia Rose", photo: "/images/team/mia-rose-greco.jpeg", pos: "50% 20%" },
+  { name: "Aziz Ross", photo: "/images/team/aziz-ross.jpeg", pos: "50% 20%" },
+  { name: "Alfredo J. Salvi F", photo: "/images/team/alfredo-salvi.jpg", pos: "50% 12%" },
 ];
 
-/* ---- Section 7: Evening timeline ---- */
-const TIMELINE = [
-  { time: "6:00 PM", title: "Doors open", text: "Arrive, grab a drink and settle into the evening." },
-  { time: "6:00 to 6:45 PM", title: "Welcome and reception", text: "Appetizers. Beverages. Networking." },
-  { time: "6:45 PM", title: "The BrickShare story", text: "Where we started, what we're building, and what lies ahead." },
+const ROOM_POINTS = [
+  { title: "Inside BrickShare", text: "An inside look at what we are building, and where we are going next." },
+  { title: "Ideas that move markets", text: "Perspectives beyond the usual pitch. Real estate. Real talk." },
+  { title: "An evening well spent", text: "Cocktails, curated bites and conversations worth remembering." },
+];
+
+const REASONS: { title: string; text: string; icon: ReactNode }[] = [
   {
+    title: "Inside BrickShare",
+    text: "Get an inside look at what we're building — and where we're going next.",
+    icon: (
+      <>
+        <rect x="5" y="2" width="14" height="20" rx="2" />
+        <path d="M9 22v-4h6v4" />
+        <path d="M9 6h.01M12 6h.01M15 6h.01M9 10h.01M12 10h.01M15 10h.01M9 14h.01M12 14h.01M15 14h.01" />
+      </>
+    ),
+  },
+  {
+    title: "Meet the people",
+    text: "Connect with founders, investors, operators, and professionals building Houston's future.",
+    icon: (
+      <>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
+  },
+  {
+    title: "Ideas that move markets",
+    text: "Hear perspectives, ideas, and opportunities beyond the usual pitch. Real estate. Real talk.",
+    icon: (
+      <>
+        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+        <path d="M9 18h6M10 22h4" />
+      </>
+    ),
+  },
+  {
+    title: "An evening well spent",
+    text: "Cocktails, curated bites, and conversations worth remembering long after the night ends.",
+    icon: (
+      <>
+        <path d="M8 22h8M7 10h10M12 15v7" />
+        <path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z" />
+      </>
+    ),
+  },
+];
+
+const MOMENTS = [
+  {
+    short: "Doors open",
+    time: "6:00 PM",
+    title: "Doors open",
+    text: "Arrive, grab a drink and settle into the evening.",
+    image: "/images/events/hero-house.webp",
+    tag: "Arrival · Gallery Steps",
+  },
+  {
+    short: "Welcome & reception",
+    time: "6:00 – 6:40",
+    title: "Welcome & reception",
+    text: "Appetizers. Beverages. Networking.",
+    image: "/images/events/room-networking.webp",
+    tag: "Reception",
+  },
+  {
+    short: "The BrickShare story",
+    time: "6:50 PM",
+    title: "The BrickShare story",
+    text: "Where we started, where we are headed, and why now.",
+    image: "/images/events/evening-story.webp",
+    tag: "Stage · Gallery Steps",
+  },
+  {
+    short: "Houston real estate",
     time: "7:10 PM",
-    title: "Houston real estate: what is next",
-    text: "A focused conversation on the market, the opportunities and what lies ahead.",
+    title: "Houston real estate",
+    text: "A focused conversation on the market and the opportunities ahead.",
+    image: "/images/hero-home.webp",
+    tag: "Stage · Gallery Steps",
   },
-  { time: "7:35 PM", title: "The launch moment", text: "A closer look at BrickShare Capital and what is taking shape." },
   {
-    time: "7:45 to 9:00 PM",
-    title: "The room is yours.",
-    text: "Meet the people, exchange ideas and continue the conversations that matter.",
+    short: "The launch",
+    time: "7:30 PM",
+    title: "The launch moment",
+    text: "A closer look at BrickShare Capital and what is taking shape.",
+    image: "/images/events/evening-launch.webp",
+    tag: "Stage · Gallery Steps",
+    highlight: true,
+  },
+  {
+    short: "The room is yours",
+    time: "7:40 – 9:00",
+    title: "The room is yours",
+    text: "Meet the people and continue the conversations that matter.",
+    image: "/images/events/evening-room.webp",
+    tag: "Lounge",
   },
 ];
 
-/* ---- Section 8: Experience ---- */
-const EXPERIENCE = [
-  { label: "Appetizers", text: "Thoughtfully prepared bites throughout the evening." },
-  { label: "Beverages", text: "A curated selection to enjoy through the night." },
-  { label: "Atmosphere", text: "An intimate setting designed for genuine connection." },
-];
-
-/* ---- Section 9: Setting ---- */
-const VENUE_ADDRESS = "1334 Brittmoore Rd, Suite 1008 · Houston, TX 77043";
-/* ---- Sponsor section ---- */
+/* ---- Sponsorship (keys/amount backend ke PLANS se match hone chahiye) ---- */
 const SPONSOR_PLANS = [
-  { key: "community", label: "Community Sponsor", price: "$100", amount: 100, desc: "Support the launch and receive recognition across event materials." },
-  { key: "bronze", label: "Bronze Sponsor", price: "$250", amount: 250, desc: "Build visibility with event and social media recognition." },
-  { key: "silver", label: "Silver Sponsor", price: "$500", amount: 500, desc: "Expand your reach through event, social, and verbal recognition." },
-  { key: "gold", label: "Gold Sponsor", price: "$1,000", amount: 1000, desc: "Stand out with prominent event visibility and VIP recognition." },
-  { key: "founding", label: "Founding Sponsor", price: "$1,500+", amount: 1500, limited: true, desc: "Become a premier partner and founding supporter of BrickShare Capital." },
-] as const;
-const LUMA_LINK = "https://luma.com/2cn4a2ir";
-const VENUE_LINK = LUMA_LINK;
-
-/* ---- Section 10: The Room cards ---- */
-const ROOM_CARDS = [
-  { tag: "The People", title: "Meet someone worth knowing.", image: IMG.roomPeople },
-  { tag: "The Conversations", title: "Talk beyond the small talk.", image: IMG.roomConversations },
-  { tag: "The Ideas", title: "Discover what's taking shape.", image: IMG.roomIdeas },
-  { tag: "The Future", title: "See where it leads.", image: IMG.roomFuture },
+  { key: "community", label: "Community Sponsor", price: "$100", desc: "Support the launch and receive recognition across event materials." },
+  { key: "bronze", label: "Bronze Sponsor", price: "$250", desc: "Build visibility with event and social media recognition." },
+  { key: "silver", label: "Silver Sponsor", price: "$500", desc: "Expand your reach through event, social, and verbal recognition." },
+  { key: "gold", label: "Gold Sponsor", price: "$1,000", desc: "Stand out with prominent event visibility and VIP recognition." },
+  { key: "founding", label: "Founding Sponsor", price: "$1,500+", desc: "Become a premier partner and founding supporter of BrickShare Capital.", limited: true },
 ];
 
-/* ------------------------- SCROLL TIMING ----------------------------------- */
-const N = chapters.length; // 4
-const F = 0.07; // transition width (fraction of total hero scroll)
-const SCROLL_HEIGHT = "500svh"; // total hero scroll distance (pinned)
-const at = (i: number) => i / N; // chapter boundary i
+/* ------------------------------ ICONS -------------------------------------- */
+function Icon({ children, size = 18, sw = 1.8 }: { children: ReactNode; size?: number; sw?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
+const ArrowRight = ({ size = 16 }: { size?: number }) => (
+  <Icon size={size}><path d="M5 12h14M13 6l6 6-6 6" /></Icon>
+);
+const ArrowLeft = ({ size = 16 }: { size?: number }) => (
+  <Icon size={size}><path d="M19 12H5M11 6l-6 6 6 6" /></Icon>
+);
+const ArrowUpRight = ({ size = 16 }: { size?: number }) => (
+  <Icon size={size}><path d="M7 17 17 7M8 7h9v9" /></Icon>
+);
+const Check = () => <Icon size={13} sw={2.4}><path d="M20 6 9 17l-5-5" /></Icon>;
 
-// text chapter i: boundary se pehle purana text upar nikalta hai, baad me naya neeche se aata hai
-function textRange(i: number) {
-  if (i === 0)
-    return { input: [0, at(1) - F, at(1)], op: [1, 1, 0], y: ["0vh", "0vh", "-55vh"], blur: [0, 0, 10] };
-  if (i === N - 1)
-    return { input: [at(i), at(i) + F, 1], op: [0, 1, 1], y: ["55vh", "0vh", "0vh"], blur: [10, 0, 0] };
-  return {
-    input: [at(i), at(i) + F, at(i + 1) - F, at(i + 1)],
-    op: [0, 1, 1, 0],
-    y: ["55vh", "0vh", "0vh", "-55vh"],
-    blur: [10, 0, 0, 10],
-  };
+/* ------------------------- ANIMATION HELPERS ------------------------------- */
+
+/** Element screen me aate hi ek baar `is-in` class lagta hai. */
+function useInView<T extends Element>(threshold = 0.2) {
+  // Har baar section screen pe aane par animation dobara chale:
+  // kaafi hissa dikhe to `true`, poora bahar chala jaye to `false` (taaki agli baar phir chale).
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const steps = Array.from({ length: 21 }, (_, i) => i / 20);
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) {
+          setInView(false);
+          return;
+        }
+        const need = Math.min(e.boundingClientRect.height * threshold, window.innerHeight * 0.3);
+        if (e.intersectionRect.height >= need) setInView(true);
+      },
+      { threshold: steps },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [threshold]);
+  return [ref, inView] as const;
 }
 
-// Drone shot: progress [base -> neeche-beech -> upar-beech -> top -> zoom-out -> full view]
-const KEY_P = [0, 0.25, 0.5, 0.72, 0.95, 1];
-const FOCUS_Y = [0.78, 0.55, 0.3, 0.19]; // tower ka base -> top (image ka fraction)
+/** Fade + rise + blur reveal. `d` = delay (seconds). */
+function Reveal({
+  as: Tag = "div",
+  className = "",
+  d = 0,
+  children,
+  style,
+}: {
+  as?: ElementType;
+  className?: string;
+  d?: number;
+  children?: ReactNode;
+  style?: CSSProperties;
+}) {
+  const [ref, inView] = useInView<HTMLElement>(0.15);
+  return (
+    <Tag
+      ref={ref}
+      className={`ev-rv ${inView ? "is-in" : ""} ${className}`}
+      style={{ ...style, transitionDelay: `${d}s` }}
+    >
+      {children}
+    </Tag>
+  );
+}
 
-// zoom (s) aur tower ki screen position (tx) ke hisaab se keyframes banata hai
-function towerKeys(s: number, tx: number) {
-  const lim = ((s - 1) / 2) * 100;
-  const cl = (v: number) => Math.max(-lim, Math.min(lim, v));
-  const X = cl((tx - 0.5 - (0.66 - 0.5) * s) * 100);
-  return {
-    S: [s, s, s, s, 1, 1],
-    X: [X, X, X, X, 0, 0],
-    Y: [...FOCUS_Y.map((fy) => cl(-(fy - 0.5) * s * 100)), 0, 0],
-  };
+/** Heading ke words ek-ek karke blur se saaf hote hain (video jaisa). */
+function Words({ text, className = "", d = 0, step = 0.07, on }: {
+  text: string; className?: string; d?: number; step?: number; on: boolean;
+}) {
+  return (
+    <span className={`ev-words ${on ? "is-in" : ""} ${className}`}>
+      {text.split(" ").map((w, i) => (
+        <span key={i} className="ev-w" style={{ transitionDelay: `${d + i * step}s` }}>
+          {w}
+          {i < text.split(" ").length - 1 ? " " : ""}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Scroll ke saath halka parallax (translateY). speed: -0.2 .. 0.2 */
+function useParallax<T extends HTMLElement>(speed: number) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const tick = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const mid = r.top + r.height / 2 - window.innerHeight / 2;
+      const v = Math.max(-80, Math.min(80, -mid * speed)); // zyada door na khiske
+      el.style.setProperty("--py", `${v.toFixed(1)}px`);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [speed]);
+  return ref;
 }
 
 /* ------------------------------ STYLES ------------------------------------- */
-// Fonts + colours (Figma values). Sab classes `ev-` prefix se, kisi aur page pe asar nahi.
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Instrument+Serif:ital@0;1&family=Montserrat:wght@500;600;700&display=swap');
-
-.ev-root{
-  --ev-ivory:#F3ECDD; --ev-ivory-muted:#B9B3A6;
-  --ev-gold-500:#D9A93F; --ev-gold-300:#F6DD8E; --ev-navy:#0A0E1F;
-  background:var(--ev-navy); color:var(--ev-ivory);
-  font-family:'Montserrat',sans-serif;
-}
-.ev-root{ --ev-navy-950:#0A0C17; --ev-navy-900:#0F1325; --ev-navy-800:#131627; }
-
-/* soft glow sirf text ke peeche */
-.ev-textglow{
-  width:fit-content; max-width:100%;
-  padding:56px 72px; margin:-56px -72px;
-  background:radial-gradient(ellipse closest-side, rgba(10,14,31,.5) 0%, rgba(10,14,31,.28) 55%, rgba(10,14,31,0) 100%);
-}
-@media (max-width:767px){ .ev-textglow{ padding:40px 24px; margin:-40px -24px; } }
-
-/* "BRICKSHARE CAPITAL PRESENTS" / eyebrow / labels */
-.ev-eyebrow{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
-  letter-spacing:.26em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-/* Heading — Instrument Serif Italic */
-.ev-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(32px, min(5.2vw, 9vh), 78px);
-  line-height:.92; letter-spacing:-.02em; color:var(--ev-ivory);
-}
-.ev-h > span{ display:block; }
-@media (max-width:767px){ .ev-h{ font-size:clamp(34px,10vw,52px); } }
-.ev-h-gold{
-  width:fit-content; max-width:100%;
-  background:linear-gradient(90deg,#9C7321 0%,#F6DD8E 35%,#D9A93F 62%,#F6DD8E 100%);
-  -webkit-background-clip:text; background-clip:text;
-  color:transparent; -webkit-text-fill-color:transparent;
-  padding:0 .08em .14em 0; margin-bottom:-.14em; /* italic/descender clipping fix */
-}
-/* chapter 1 heading — sabse bada */
-.ev-h-xl{ font-size:clamp(40px, min(8vw, 13.5vh), 120px); }
-@media (max-width:767px){ .ev-h-xl{ font-size:clamp(40px,12vw,64px); } }
-
-/* chapter 2, 3, 4 ka pura text bada */
-.ev-chbig .ev-eyebrow{ font-size:14px; }
-.ev-chbig .ev-h{ font-size:clamp(40px, min(7.4vw, 12.5vh), 110px); }
-.ev-chbig .ev-body{ font-size:clamp(15px,1.3vw,19px); max-width:36rem; }
-@media (max-width:767px){
-  .ev-chbig .ev-h{ font-size:clamp(36px,11vw,58px); }
-}
-
-/* Paragraph — Montserrat Medium */
-.ev-body{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(13px,1vw,15px); line-height:1.6; color:var(--ev-ivory-muted);
-  max-width:30rem;
-}
-/* When / Where */
-.ev-meta-label{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:10px; line-height:1.4;
-  letter-spacing:.26em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-meta-value{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(16px,1.35vw,20px); line-height:1.12; letter-spacing:-.005em; color:var(--ev-ivory);
-}
-.ev-meta-sub{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:12px; line-height:1.5;
-  color:var(--ev-ivory-muted);
-}
-/* "Limited guest list · ..." */
-.ev-note{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:10px; line-height:1.4;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--ev-ivory-muted);
-}
-/* "Be there when it begins." — Caveat Bold */
-.ev-hand{
-  font-family:'Caveat',cursive; font-weight:700; font-size:clamp(22px,2.1vw,30px);
-  line-height:1; letter-spacing:0; color:var(--ev-gold-300);
-}
-/* Reserve Your Place — gold gradient pill */
-.ev-btn-gold{
-  display:inline-flex; align-items:center; justify-content:center; gap:12px;
-  width:230px; max-width:100%; height:48px; padding:0 24px; border-radius:999px;
-  background:linear-gradient(90deg,#9C7222 0%,#F6DD8E 35%,#D9A93F 60%,#F6DD8E 100%);
-  color:var(--ev-navy); font-family:'Montserrat',sans-serif; font-weight:700; font-size:11px;
-  letter-spacing:.18em; text-transform:uppercase; white-space:nowrap;
-  box-shadow:0 12px 32px -12px rgba(217,169,63,.65);
-  transition:transform .3s ease, box-shadow .3s ease;
-}
-.ev-btn-gold:hover{ transform:translateY(-2px); box-shadow:0 16px 38px -10px rgba(217,169,63,.8); }
-.ev-btn-ghost{
-  display:inline-flex; align-items:center; justify-content:center; gap:12px;
-  height:48px; padding:0 24px; border-radius:999px;
-  border:1px solid rgba(217,169,63,.55); color:var(--ev-ivory);
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px;
-  letter-spacing:.18em; text-transform:uppercase; white-space:nowrap;
-  transition:background .3s ease, border-color .3s ease;
-}
-.ev-btn-ghost:hover{ background:rgba(217,169,63,.12); border-color:var(--ev-gold-500); }
-/* chapter nav (ARRIVAL / THE ROOM / ...) — ab use nahi hota */
-.ev-chnav{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; padding-bottom:6px;
-  border-bottom:1px solid transparent; color:rgba(185,179,166,.7);
-  transition:color .3s ease, border-color .3s ease;
-}
-.ev-chnav:hover{ color:var(--ev-ivory); }
-.ev-chnav[data-active="true"]{ color:var(--ev-gold-300); border-color:var(--ev-gold-300); }
-
-/* marquee strip */
-.ev-marquee{
-  overflow:hidden; background:#131627; padding:22px 0;
-  border-style:solid; border-color:#9C7222; border-width:1px 0 1px 0;
-}
-.ev-marquee-track{ display:flex; width:max-content; animation:ev-marquee 38s linear infinite; }
-.ev-marquee-item{
-  display:flex; align-items:center; gap:36px; padding-right:36px; white-space:nowrap;
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(22px,2.2vw,32px); line-height:1.1; color:var(--ev-ivory);
-}
-.ev-marquee-star{ color:var(--ev-gold-500); font-style:normal; font-size:.55em; }
-.ev-marquee-text{
-  display:inline-block;
-  background:linear-gradient(90deg,#9C7321 0%,#F6DD8E 35%,#D9A93F 62%,#F6DD8E 100%);
-  -webkit-background-clip:text; background-clip:text;
-  color:transparent; -webkit-text-fill-color:transparent;
-  padding:0 .08em .14em 0; margin-bottom:-.14em; /* italic clipping fix */
-}
-@keyframes ev-marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
-@media (prefers-reduced-motion:reduce){ .ev-marquee-track{ animation:none; } }
-
-/* SECTION 3: A room full of possibilities */
-.ev-room{ background:var(--ev-navy-950); }
-.ev-room-eyebrow{
-  display:flex; align-items:center; gap:14px;
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:13px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-room-eyebrow::before{ content:""; width:40px; height:1px; background:var(--ev-gold-500); }
-.ev-room-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(44px,6.1vw,88px); line-height:.96; letter-spacing:-.015em; color:var(--ev-ivory);
-}
-.ev-room-h > span{ display:block; }
-.ev-room-p1{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(15px,1.25vw,18px); line-height:1.6; color:var(--ev-ivory-muted);
-}
-.ev-room-p2{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:15px; line-height:1.6; color:var(--ev-ivory-muted);
-}
-.ev-room-btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:12px;
-  height:56px; padding:0 26px; border-radius:999px; border:1px solid var(--ev-gold-500);
-  font-family:'Montserrat',sans-serif; font-weight:700; font-size:14px; line-height:1;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--ev-gold-300); white-space:nowrap;
-  transition:background .3s ease, border-color .3s ease;
-}
-.ev-room-btn:hover{ background:rgba(217,169,63,.12); border-color:var(--ev-gold-300); }
-.ev-room-btn svg{ transition:transform .3s ease; }
-.ev-room-btn:hover svg{ transform:translateX(4px); }
-
-/* ---- arch image (size Tailwind classes se aata hai, yahan sirf look + animation) ---- */
-.ev-arch{ --ev-off:0px; }
-.ev-arch-shape{ position:absolute; border-radius:50% 50% 0 0 / 29% 29% 0 0; }
-
-/* gold frame: image ke peeche (offset 0 = image ke bilkul barabar) */
-.ev-arch-box{
-  inset:0; z-index:0; pointer-events:none;
-  border:1px solid rgba(217,169,63,.8); opacity:0;
-  transition:opacity .8s ease .7s, transform 1.3s cubic-bezier(.22,1,.36,1) .7s;
-}
-/* image: neeche se upar khulti hai */
-.ev-arch-img{
-  inset:0; z-index:1; overflow:hidden; background:var(--ev-navy-950);
-  clip-path:inset(100% 0 0 0);
-  transition:clip-path 1.3s cubic-bezier(.22,1,.36,1) .25s;
-}
-.ev-arch-zoom{
-  position:absolute; inset:-2px; transform:scale(1.22);
-  transition:transform 2s cubic-bezier(.22,1,.36,1) .25s;
-}
-/* image ka apna patla gold border */
-.ev-arch-img::after{
-  content:""; position:absolute; inset:0; border-radius:inherit; z-index:3;
-  border:1px solid rgba(217,169,63,.8); pointer-events:none;
-}
-/* ek baar golden shine image ke upar se guzarti hai */
-.ev-arch-img::before{
-  content:""; position:absolute; top:0; bottom:0; left:-60%; width:45%; z-index:2;
-  pointer-events:none; opacity:0; transform:skewX(-12deg);
-  background:linear-gradient(100deg, transparent, rgba(246,221,142,.28), transparent);
-}
-/* tower ke peeche halka glow pulse */
-.ev-arch-glow{
-  position:absolute; left:50%; top:46%; width:70%; aspect-ratio:1; z-index:1;
-  transform:translate(-50%,-50%); opacity:0; pointer-events:none; mix-blend-mode:screen;
-  background:radial-gradient(circle, rgba(246,221,142,.38) 0%, rgba(246,221,142,0) 62%);
-}
-
-.ev-arch[data-in="true"] .ev-arch-box{ opacity:1; transform:translate(var(--ev-off),var(--ev-off)); }
-.ev-arch[data-in="true"] .ev-arch-img{ clip-path:inset(0 0 0 0); }
-.ev-arch[data-in="true"] .ev-arch-zoom{ transform:scale(1); }
-.ev-arch[data-in="true"] .ev-arch-img::before{ animation:ev-shine 1.8s ease 1.3s 1 both; }
-.ev-arch[data-in="true"] .ev-arch-glow{ animation:ev-glow 4.5s ease-in-out 1.6s infinite; }
-@keyframes ev-shine{ 0%{ left:-60%; opacity:0; } 20%{ opacity:1; } 100%{ left:130%; opacity:0; } }
-@keyframes ev-glow{
-  0%,100%{ opacity:.25; transform:translate(-50%,-50%) scale(.92); }
-  50%{ opacity:.85; transform:translate(-50%,-50%) scale(1.08); }
-}
-
-/* text: heading line-by-line reveal + eyebrow line draw (sirf is section me) */
-.ev-room-lines > span{ overflow:hidden; padding:0 .1em .14em 0; margin-bottom:-.14em; }
-.ev-room-lines > span > i{
-  display:block; font-style:inherit; transform:translateY(105%);
-  transition:transform 1.1s cubic-bezier(.22,1,.36,1);
-}
-.ev-room-lines > span:nth-child(2) > i{ transition-delay:.12s; }
-.ev-room-col[data-in="true"] .ev-room-lines > span > i{ transform:none; }
-.ev-room-col .ev-room-eyebrow::before{
-  transform:scaleX(0); transform-origin:left; transition:transform .9s ease .1s;
-}
-.ev-room-col[data-in="true"] .ev-room-eyebrow::before{ transform:none; }
-
-@media (prefers-reduced-motion:reduce){
-  .ev-arch-box,.ev-arch-img,.ev-arch-zoom,.ev-room-lines > span > i,.ev-room-col .ev-room-eyebrow::before{ transition:none !important; }
-  .ev-arch-box{ opacity:1; transform:translate(var(--ev-off),var(--ev-off)); }
-  .ev-arch-img{ clip-path:inset(0 0 0 0); } .ev-arch-zoom{ transform:none; }
-  .ev-room-lines > span > i,.ev-room-col .ev-room-eyebrow::before{ transform:none; }
-  .ev-arch-glow,.ev-arch-img::before{ animation:none !important; }
-  .ev-arch-glow{ opacity:.4; }
-}
-
-/* =====================================================================
-   NEW SECTIONS (4 → 11)
-   ===================================================================== */
-.ev-pad{ --ev-pad:clamp(20px,6.67vw,96px); }
-.ev-sec{ padding-top:clamp(56px,6.7vw,96px); padding-bottom:clamp(56px,6.7vw,96px); }
-.ev-bg-800{ background:var(--ev-navy-800); }
-.ev-bg-900{ background:var(--ev-navy-900); }
-.ev-bg-950{ background:var(--ev-navy-950); }
-
-/* gold gradient text (centered / inline use) */
-.ev-gold-text{
-  display:inline-block;
-  background:linear-gradient(90deg,#9C7321 0%,#F6DD8E 35%,#D9A93F 62%,#F6DD8E 100%);
-  -webkit-background-clip:text; background-clip:text;
-  color:transparent; -webkit-text-fill-color:transparent;
-  padding:0 .08em .14em 0; margin-bottom:-.14em;
-}
-
-/* SECTION 4: Why attend */
-.ev-why-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:40px; }
-@media (max-width:1023px){ .ev-why-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (max-width:599px){ .ev-why-grid{ grid-template-columns:1fr; gap:36px; } }
-.ev-why-item{ border-top:1px solid rgba(217,169,63,.75); padding-top:36px; }
-.ev-numeral{
-  display:inline-block; font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(48px,4.7vw,68px); line-height:1; padding:0 .1em .06em 0;
-  background:linear-gradient(135deg,#F6DD8E 0%,#D9A93F 55%,#9C7321 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
-}
-.ev-why-label{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:13px; line-height:1.4;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--ev-ivory);
-}
-.ev-why-text{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:16px; line-height:1.6; color:var(--ev-ivory-muted);
-}
-
-/* SECTION 5: The right room */
-.ev-right{ position:relative; overflow:hidden; text-align:center; background:#080B16; }
-.ev-scene-stick.ev-right{
-  display:flex; align-items:center;
-  /* image ratio 2160/1410 = 1.532 -> height kabhi isse kam nahi, to upar/neeche se nahi kategi */
-  min-height:calc(100vw / 1.532);
-  padding-top:clamp(56px,8vw,140px); padding-bottom:clamp(56px,8vw,140px);
-}
-@media (min-width:1024px){
-  .ev-scene-stick.ev-right{ min-height:min(calc(100vw / 1.532), 1000px); }
-}
-  @media (min-width:1600px){
-  /* image ke upar/neeche khali margin hai, 1.85 ratio par bhi tower poora dikhta hai */
-  .ev-scene-stick.ev-right{ min-height:max(calc(100vw / 1.85), calc(100svh - 72px)); }
-}
-.ev-right-mark{
-  position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; object-position:50% 50%;
-  pointer-events:none; user-select:none;
-  opacity:0; transform:scale(1.06);
-  transition:opacity 1.6s ease, transform 2.8s cubic-bezier(.22,1,.36,1);
-}
-.ev-right-mark[data-in="true"]{ opacity:1; transform:scale(1); }
-
-/* heading: Instrument Serif Italic 148px / lh 92% / ls -2% */
-.ev-right-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(40px,9.2vw,132px); line-height:.92; letter-spacing:-.02em; color:var(--ev-ivory);
-}
-.ev-rr-line{ display:block; overflow:hidden; padding:.08em .1em .16em; margin:-.08em 0 -.16em; }
-.ev-rr-line > i{
-  display:block; font-style:inherit; opacity:0; transform:translateY(110%); filter:blur(12px);
-  transition:transform 1.2s cubic-bezier(.22,1,.36,1), opacity 1s ease, filter 1.2s ease;
-}
-.ev-rr-line:nth-child(2) > i{ transition-delay:.16s; }
-.ev-rr-line > i.ev-gold-text{ width:fit-content; margin-left:auto; margin-right:auto; }
-@media (min-width:1024px){ .ev-right-h{ white-space:nowrap; } }
-
-/* sub line: Instrument Serif Italic 34px / lh 112% / ls -0.5% */
-.ev-right-sub{
-  display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px clamp(16px,2.4vw,34px);
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(20px,2.36vw,34px); line-height:1.12; letter-spacing:-.005em; color:var(--ev-ivory);
-}
-.ev-right-star{ color:var(--ev-gold-500); font-style:normal; font-size:.55em; }
-.ev-rr-pop{
-  opacity:0; transform:translateY(18px); filter:blur(8px);
-  transition:opacity .9s ease, transform 1s cubic-bezier(.22,1,.36,1), filter .9s ease;
-}
-.ev-right-sub > .ev-rr-pop:nth-child(1){ transition-delay:.7s; }
-.ev-right-sub > .ev-rr-pop:nth-child(2){ transition-delay:.8s; }
-.ev-right-sub > .ev-rr-pop:nth-child(3){ transition-delay:.95s; }
-.ev-right-sub > .ev-rr-pop:nth-child(4){ transition-delay:1.05s; }
-.ev-right-sub > .ev-rr-pop:nth-child(5){ transition-delay:1.2s; }
-
-/* eyebrow: Montserrat SemiBold 13px / lh 140% / ls 28% / uppercase / gold-500 */
-.ev-right-eyebrow{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:13px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-500);
-  opacity:0; transform:translateY(14px); filter:blur(6px);
-  transition:opacity .9s ease 1.45s, transform 1s cubic-bezier(.22,1,.36,1) 1.45s, filter .9s ease 1.45s;
-}
-
-/* section screen me aate hi sab ek baar chalta hai */
-.ev-right-body[data-in="true"] .ev-rr-line > i,
-.ev-right-body[data-in="true"] .ev-rr-pop,
-.ev-right-body[data-in="true"] .ev-right-eyebrow{ opacity:1; transform:none; filter:none; }
-
-@media (prefers-reduced-motion:reduce){
-  .ev-right-mark,.ev-rr-line > i,.ev-rr-pop,.ev-right-eyebrow{ transition:none !important; }
-  .ev-right-mark{ opacity:1; transform:none; }
-  .ev-rr-line > i,.ev-rr-pop,.ev-right-eyebrow{ opacity:1; transform:none; filter:none; }
-}
-
-/* SECTION 6: People */
-.ev-pp-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(38px,6.5vw,94px); line-height:.96; letter-spacing:-.015em; color:var(--ev-ivory);
-}
-.ev-pp-h > span{ display:inline-block; overflow:hidden; vertical-align:top; padding:0 .1em .16em 0; margin:0 -.1em -.16em 0; }
-.ev-pp-h > span > i{
-  display:block; font-style:inherit; opacity:0; transform:translateY(105%); filter:blur(8px);
-  transition:transform 1.1s cubic-bezier(.22,1,.36,1), filter 1s ease, opacity .8s ease;
-}
-.ev-pp-h > span:nth-child(2) > i{ transition-delay:.14s; }
-.ev-pp-head[data-in="true"] .ev-pp-h > span > i{ opacity:1; transform:none; filter:none; }
-
-.ev-pp-sub{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(15px,1.25vw,18px); line-height:1.6; letter-spacing:0;
-  color:var(--ev-ivory-muted); max-width:34rem;
-}
-
-.ev-people-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(16px,2.8vw,40px); }
-@media (max-width:1023px){ .ev-people-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px 20px; } }
-
-.ev-person{ --d:0s; }
-
-/* arch card: neeche se upar khulta hai */
-.ev-person-arch{
-  position:relative; aspect-ratio:296/380; overflow:hidden;
-  border-radius:999px 999px 0 0; border:1px solid rgba(217,169,63,.55);
-  background:linear-gradient(180deg,#2A2F52 0%,#0A0C17 100%);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
-  clip-path:inset(100% 0 0 0);
-  transition:clip-path 1.2s cubic-bezier(.22,1,.36,1) var(--d), border-color .6s ease;
-}
-.ev-person-arch img{
-  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-  transform:scale(1.15); transition:transform 1.8s cubic-bezier(.22,1,.36,1) var(--d);
-}
-  /* photo me arch + gold border pehle se baked hai, isliye CSS ka border/background hata do */
-.ev-person-arch--photo{ border:none; border-radius:0; background:transparent; }
-.ev-person-initials{
-  display:inline-block; position:relative;
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(64px,7.5vw,108px); line-height:.92; letter-spacing:-.02em; padding:0 .1em .08em 0;
-  background:linear-gradient(90deg,#9C7321 0%,#F6DD8E 35%,#D9A93F 62%,#F6DD8E 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
-  opacity:0; transform:translateY(22px) scale(.94); filter:blur(10px);
-  transition:opacity .9s ease calc(var(--d) + .55s), transform 1.1s cubic-bezier(.22,1,.36,1) calc(var(--d) + .55s), filter 1s ease calc(var(--d) + .55s);
-}
-.ev-person-co{
-  position:relative; font-family:'Montserrat',sans-serif; font-weight:600; font-size:8px; letter-spacing:.3em;
-  text-transform:uppercase; color:rgba(217,169,63,.7);
-  opacity:0; transition:opacity .9s ease calc(var(--d) + .95s);
-}
-.ev-person-meta{
-  opacity:0; transform:translateY(14px); filter:blur(6px);
-  transition:opacity .9s ease calc(var(--d) + .75s), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--d) + .75s), filter .9s ease calc(var(--d) + .75s);
-}
-.ev-person[data-in="true"] .ev-person-arch{ clip-path:inset(0 0 0 0); }
-.ev-person[data-in="true"] .ev-person-arch img{ transform:none; }
-.ev-person[data-in="true"] .ev-person-initials{ opacity:1; transform:none; filter:none; }
-.ev-person[data-in="true"] .ev-person-co{ opacity:1; }
-.ev-person[data-in="true"] .ev-person-meta{ opacity:1; transform:none; filter:none; }
-
-.ev-person-name{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(22px,2.1vw,30px); line-height:1.12; letter-spacing:-.005em; color:var(--ev-ivory);
-}
-.ev-person-role{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-person-row{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 12px; }
-.ev-person-link{
-  display:inline-flex; align-items:center; gap:6px; margin-left:auto; white-space:nowrap;
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:13px; line-height:1.6; letter-spacing:0;
-  color:var(--ev-gold-500); transition:color .3s ease;
-}
-.ev-person-link svg{ transition:transform .3s ease; }
-.ev-person-link:hover{ color:var(--ev-gold-300); }
-.ev-person-link:hover svg{ transform:translateX(4px); }
-@media (hover:hover){ .ev-person:hover .ev-person-arch{ border-color:rgba(217,169,63,.95); } }
-
-@media (max-width:1023px){ .ev-person-initials{ font-size:clamp(72px,11vw,104px); } }
-@media (max-width:599px){
-  .ev-people-grid{ gap:28px 14px; }
-  .ev-person-initials{ font-size:clamp(46px,15vw,72px); }
-  .ev-person-co{ font-size:7px; letter-spacing:.24em; }
-  .ev-person-name{ font-size:21px; }
-  .ev-person-role{ font-size:9.5px; letter-spacing:.2em; }
-  .ev-person-link{ font-size:13px; }
-}
-
-@media (prefers-reduced-motion:reduce){
-  .ev-pp-h > span > i,.ev-person-arch,.ev-person-arch img,.ev-person-initials,.ev-person-co,.ev-person-meta{ transition:none !important; }
-  .ev-pp-h > span > i,.ev-person-initials,.ev-person-meta{ opacity:1; transform:none; filter:none; }
-  .ev-person-arch{ clip-path:none; } .ev-person-arch img{ transform:none; } .ev-person-co{ opacity:1; }
-}
-
-/* SECTION 7: Evening timeline */
-.ev-evening-grid{ display:grid; gap:48px; grid-template-columns:1fr; }
-@media (min-width:1024px){
-  .ev-evening-grid{ grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:clamp(40px,6vw,96px); }
-  .ev-evening-stick{ position:sticky; top:clamp(96px,14vh,150px); align-self:start; }
-}
-
-/* heading: Instrument Serif Italic 100.8px / lh 98% / ls -2% */
-.ev-ev-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(40px,7vw,100.8px); line-height:.98; letter-spacing:-.02em; color:var(--ev-ivory);
-}
-.ev-ev-h > span{ display:block; overflow:hidden; padding:0 .1em .16em 0; margin-bottom:-.16em; }
-.ev-ev-h > span > i{
-  display:block; font-style:inherit; opacity:0; transform:translateY(105%); filter:blur(8px);
-  transition:transform 1.1s cubic-bezier(.22,1,.36,1), filter 1s ease, opacity .8s ease;
-}
-.ev-ev-h > span:nth-child(2) > i{ transition-delay:.12s; }
-.ev-ev-h > span:nth-child(3) > i{ transition-delay:.24s; }
-.ev-ev-head[data-in="true"] .ev-ev-h > span > i{ opacity:1; transform:none; filter:none; }
-
-/* sub: Montserrat Medium 18.72px / lh 160% */
-.ev-ev-sub{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(15px,1.3vw,18.72px); line-height:1.6; letter-spacing:0; color:var(--ev-ivory-muted);
-}
-
-/* timeline */
-.ev-tl{ position:relative; list-style:none; margin:0; display:flex; flex-direction:column; gap:clamp(24px,2.6vw,40px); padding-left:28px; }
-
-/* rail: dim track + gold fill + moving tip */
-.ev-tl-rail{ position:absolute; left:4px; top:8px; bottom:8px; width:1px; background:rgba(217,169,63,.22); }
-.ev-tl-fill{
-  position:absolute; inset:0; transform-origin:top;
-  background:linear-gradient(180deg,#F6DD8E 0%,#D9A93F 60%,#9C7321 100%);
-}
-.ev-tl-tip{
-  position:absolute; left:50%; width:11px; height:11px; margin-left:-5.5px; margin-top:-5.5px; border-radius:999px;
-  background:radial-gradient(circle,#FFF3C4 0%,#F6DD8E 45%,#D9A93F 100%);
-  box-shadow:0 0 0 5px rgba(217,169,63,.16), 0 0 22px 4px rgba(246,221,142,.55);
-}
-
-.ev-tl-li{ position:relative; }
-/* dot: pehle halka ring, line pahunchte hi gold bhar jata hai */
-.ev-tl-li::before{
-  content:""; position:absolute; left:-28px; top:4px; width:9px; height:9px; border-radius:999px;
-  background:var(--ev-navy-950); border:1px solid rgba(217,169,63,.5); box-sizing:border-box;
-}
-.ev-tl-dot{
-  position:absolute; left:-28px; top:4px; width:9px; height:9px; border-radius:999px; opacity:0;
-  background:var(--ev-gold-500); box-shadow:0 0 0 4px rgba(217,169,63,.18), 0 0 14px rgba(246,221,142,.6);
-}
-
-.ev-tl-item{
-  display:grid; grid-template-columns:1fr; gap:6px 24px;
-  padding-bottom:clamp(24px,2.6vw,40px);
-  border-bottom:1px solid var(--color-gold-700, #9C7222);
-}
-.ev-tl-time{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:13px; line-height:1.4;
-  letter-spacing:.18em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-tl-title{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(26px,2.8vw,40.32px); line-height:1.1; letter-spacing:-.01em; color:var(--ev-ivory);
-}
-.ev-tl-text{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:16px; line-height:1.6; letter-spacing:0;
-  color:var(--ev-ivory-muted); margin-top:8px; max-width:34rem;
-}
-@media (min-width:640px){
-  .ev-tl-item{ grid-template-columns:clamp(176px,15vw,210px) 1fr; }
-  .ev-tl-time{ padding-top:10px; }
-  .ev-tl-li::before,.ev-tl-dot{ top:14px; }
-}
-@media (max-width:420px){ .ev-tl-text{ font-size:15px; } }
-
-@media (prefers-reduced-motion:reduce){
-  .ev-ev-h > span > i{ transition:none !important; opacity:1; transform:none; filter:none; }
-}
-
-/* SECTION 8: Experience */
-.ev-exp-grid{ display:grid; gap:48px; grid-template-columns:1fr; align-items:center; }
-@media (min-width:1024px){ .ev-exp-grid{ grid-template-columns:minmax(0,1fr) minmax(0,560px); gap:clamp(40px,6vw,96px); } }
-.ev-exp-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(48px,6.9vw,100px); line-height:.98; letter-spacing:-.02em; color:var(--ev-ivory);
-}
-.ev-exp-h > span{ display:block; }
-.ev-exp-lead{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:clamp(16px,1.4vw,20px); line-height:1.6;
-  color:var(--ev-ivory-muted); max-width:34rem;
-}
-.ev-exp-cols{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; max-width:34rem; }
-@media (max-width:599px){ .ev-exp-cols{ grid-template-columns:1fr; } }
-.ev-exp-label{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-exp-text{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:14px; line-height:1.6; color:var(--ev-ivory-muted);
-}
-.ev-exp-img{ width:100%; max-height:calc(100svh - 160px); aspect-ratio:560/740; object-fit:cover; border-radius:4px; display:block; margin-left:auto; }
-/* SECTION 8: Experience (naya) */
-.ev-xp-grid{
-  display:grid; gap:48px; grid-template-columns:1fr; align-items:center;
-}
-@media (min-width:1024px){
-  .ev-xp-grid{ grid-template-columns:minmax(0,1fr) minmax(0,min(560px,44%)); gap:clamp(40px,6vw,96px); }
-}
-
-/* heading: Instrument Serif Italic 104px / lh 96% / ls -1.5% */
-.ev-xp-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(44px,7.2vw,104px); line-height:.96; letter-spacing:-.015em; color:var(--ev-ivory);
-}
-.ev-xp-h > span{ display:block; overflow:hidden; padding:0 .1em .16em 0; margin-bottom:-.16em; }
-.ev-xp-h > span > i{
-  display:block; font-style:inherit; opacity:0; transform:translateY(105%); filter:blur(8px);
-  transition:transform 1.1s cubic-bezier(.22,1,.36,1), filter 1s ease, opacity .8s ease;
-}
-.ev-xp-h > span:nth-child(2) > i{ transition-delay:.12s; }
-.ev-xp-h > span:nth-child(3) > i{ transition-delay:.24s; }
-
-/* lead: Montserrat Medium 20px / lh 160% */
-.ev-xp-lead{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(16px,1.4vw,20px); line-height:1.6; letter-spacing:0;
-  color:var(--ev-ivory-muted); max-width:34rem;
-}
-
-/* 3 columns: label 12px gold-300, text 14px */
-.ev-xp-cols{
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:24px; max-width:34rem;
-}
-.ev-xp-label{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:12px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-gold-300);
-}
-.ev-xp-text{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:14px; line-height:1.6; letter-spacing:0;
-  color:var(--ev-ivory-muted); margin-top:12px;
-}
-
-/* handwritten: Caveat Bold 34px / lh 100% */
-.ev-xp-hand{
-  display:inline-block; transform:rotate(-2deg); transform-origin:left center;
-  font-family:'Caveat',cursive; font-weight:700; font-size:clamp(24px,2.36vw,34px);
-  line-height:1; letter-spacing:0; color:var(--ev-gold-300);
-  clip-path:inset(-10% 100% -10% 0);
-  transition:clip-path 1.6s cubic-bezier(.65,0,.35,1) 1.5s;
-}
-
-/* text ke chhote items */
-.ev-xp-pop{
-  opacity:0; transform:translateY(16px); filter:blur(6px);
-  transition:opacity .9s ease var(--xd,0s), transform 1s cubic-bezier(.22,1,.36,1) var(--xd,0s), filter .9s ease var(--xd,0s);
-}
-
-/* text column trigger */
-.ev-xp-col[data-in="true"] .ev-xp-h > span > i{ opacity:1; transform:none; filter:none; }
-.ev-xp-col[data-in="true"] .ev-xp-pop{ opacity:1; transform:none; filter:none; }
-.ev-xp-col[data-in="true"] .ev-xp-hand{ clip-path:inset(-10% 0 -10% 0); }
-
-/* image: neeche se upar khulti hai + zoom-out + ek baar gold shine */
-.ev-xp-frame{
-  position:relative; width:100%; aspect-ratio:560/740; max-height:calc(100svh - 120px);
-  margin-left:auto; border-radius:4px; overflow:hidden; background:var(--ev-navy-950);
-  clip-path:inset(100% 0 0 0);
-  transition:clip-path 1.5s cubic-bezier(.22,1,.36,1) .1s;
-}
-.ev-xp-zoom{
-  position:absolute; inset:-2px; transform:scale(1.25);
-  transition:transform 2.4s cubic-bezier(.22,1,.36,1) .1s;
-}
-.ev-xp-zoom img{ width:100%; height:100%; object-fit:cover; display:block; user-select:none; will-change:transform; }
-.ev-xp-frame::after{
-  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:3;
-  border:1px solid rgba(217,169,63,.35);
-}
-.ev-xp-frame::before{
-  content:""; position:absolute; top:0; bottom:0; left:-60%; width:45%; z-index:2;
-  pointer-events:none; opacity:0; transform:skewX(-12deg);
-  background:linear-gradient(100deg, transparent, rgba(246,221,142,.26), transparent);
-}
-.ev-xp-media[data-in="true"] .ev-xp-frame{ clip-path:inset(0 0 0 0); }
-.ev-xp-media[data-in="true"] .ev-xp-zoom{ transform:scale(1); }
-.ev-xp-media[data-in="true"] .ev-xp-frame::before{ animation:ev-shine 1.8s ease 1.2s 1 both; }
-
-/* tablet / mobile: image text ke neeche, center me */
-@media (max-width:1023px){
-  .ev-xp-frame{ max-width:min(100%,520px); margin-left:auto; margin-right:auto; max-height:none; }
-}
-@media (max-width:599px){
-  .ev-xp-cols{ grid-template-columns:1fr; gap:20px; }
-  .ev-xp-hand{ transform:rotate(-1.5deg); }
-}
-@media (max-width:420px){ .ev-xp-h{ font-size:40px; } }
-
-@media (prefers-reduced-motion:reduce){
-  .ev-xp-h > span > i,.ev-xp-pop,.ev-xp-hand,.ev-xp-frame,.ev-xp-zoom{ transition:none !important; }
-  .ev-xp-h > span > i,.ev-xp-pop{ opacity:1; transform:none; filter:none; }
-  .ev-xp-hand{ clip-path:none; }
-  .ev-xp-frame{ clip-path:none; } .ev-xp-zoom{ transform:none; }
-  .ev-xp-frame::before{ animation:none !important; }
-}
-
-/* SECTION 9: Setting */
-.ev-scene-stick.ev-setting{ display:flex; align-items:stretch; overflow:hidden; min-height:520px; background:var(--ev-navy-950); }
-@media (min-width:1024px){ .ev-scene-stick.ev-setting{ min-height:max(640px,62.5vw); } }
-.ev-setting .ev-scene-body{ display:flex; align-items:flex-end; }
-
-/* background image + zoom-out */
-.ev-setting-media{ position:absolute; inset:0; overflow:hidden; }
-.ev-setting-zoom{ position:absolute; inset:0; will-change:transform; }
-.ev-setting-bg{
-  display:block; width:100%; height:100%; object-fit:cover; object-position:50% 50%;
-  will-change:transform; user-select:none;
-}
-.ev-setting-shade{
-  position:absolute; inset:0;
-  background:linear-gradient(90deg, rgba(10,14,31,.55) 0%, rgba(10,14,31,.2) 50%, rgba(10,14,31,.1) 100%);
-}
-@media (max-width:1023px){
-  .ev-setting-shade{ background:linear-gradient(180deg, rgba(10,14,31,.35) 0%, rgba(10,14,31,.6) 100%); }
-}
-
-/* content: card left-bottom, tag right-bottom */
-.ev-scene-body .ev-setting-wrap{
-  width:100%; display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
-  gap:28px 40px; padding-top:clamp(48px,5.5vw,80px); padding-bottom:clamp(48px,5.5vw,80px);
-}
-
-.ev-setting-card{
-  position:relative; width:618px; max-width:100%; padding:clamp(28px,3.4vw,48px);
-  background:rgba(10,12,26,.82); border:1px solid rgba(217,169,63,.7);
-  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-  opacity:0; transform:translateY(32px);
-  transition:opacity 1s ease .2s, transform 1.2s cubic-bezier(.22,1,.36,1) .2s;
-}
-.ev-setting-wrap .ev-room-eyebrow::before{ transform:scaleX(0); transform-origin:left; transition:transform .9s ease .6s; }
-
-/* heading: Instrument Serif Italic 88px */
-.ev-setting-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(40px,6.1vw,88px); line-height:.96; letter-spacing:-.015em; color:var(--ev-ivory);
-}
-.ev-setting-h > span{ display:block; overflow:hidden; padding:0 .1em .16em 0; margin-bottom:-.16em; }
-.ev-setting-h > span > i{
-  display:block; font-style:inherit; opacity:0; transform:translateY(105%); filter:blur(8px);
-  transition:transform 1.1s cubic-bezier(.22,1,.36,1) .55s, filter 1s ease .55s, opacity .8s ease .55s;
-}
-.ev-setting-h > span:nth-child(2) > i{ transition-delay:.69s; }
-
-/* Gallery Steps: Instrument Serif Italic 40px, gold gradient */
-.ev-setting-sub{
-  display:inline-block;
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(28px,2.78vw,40px); line-height:1.12; letter-spacing:-.005em;
-  background:linear-gradient(90deg,#9C7321 0%,#F6DD8E 35%,#D9A93F 62%,#F6DD8E 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
-  padding:0 .08em .14em 0; margin-bottom:-.14em;
-}
-.ev-setting-p{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:16px; line-height:1.6; color:var(--ev-ivory-muted);
-}
-.ev-setting-addr{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:13px; line-height:1.4;
-  letter-spacing:.2em; text-transform:uppercase; color:var(--ev-ivory);
-}
-
-/* button: border #D9A93F, Montserrat Bold 14px, ls 14%, color #F6DD8E */
-.ev-setting-btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:12px;
-  height:60px; padding:0 30px; border-radius:999px; border:1px solid #D9A93F; color:#F6DD8E;
-  font-family:'Montserrat',sans-serif; font-weight:700; font-size:14px; line-height:1;
-  letter-spacing:.14em; text-transform:uppercase; white-space:nowrap;
-  transition:background .3s ease, border-color .3s ease;
-}
-.ev-setting-btn:hover{ background:rgba(217,169,63,.12); border-color:#F6DD8E; }
-.ev-setting-btn svg{ transition:transform .3s ease; }
-.ev-setting-btn:hover svg{ transform:translateX(4px); }
-
-/* tag: Instrument Serif Italic 40px */
-.ev-setting-tag{
-  margin-left:auto; max-width:100%; text-align:right;
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(24px,2.78vw,40px); line-height:1.12; letter-spacing:-.005em; color:var(--ev-ivory);
-  text-shadow:0 2px 24px rgba(0,0,0,.55);
-}
-@media (max-width:1023px){
-  .ev-setting-tag{ margin-left:0; text-align:left; flex:1 1 100%; }
-}
-
-/* chhote items ek ke baad ek */
-.ev-st-pop{
-  opacity:0; transform:translateY(14px); filter:blur(6px);
-  transition:opacity .9s ease var(--xd,0s), transform 1s cubic-bezier(.22,1,.36,1) var(--xd,0s), filter .9s ease var(--xd,0s);
-}
-
-/* trigger */
-.ev-setting-wrap[data-in="true"] .ev-setting-card{ opacity:1; transform:none; }
-.ev-setting-wrap[data-in="true"] .ev-room-eyebrow::before{ transform:none; }
-.ev-setting-wrap[data-in="true"] .ev-setting-h > span > i{ opacity:1; transform:none; filter:none; }
-.ev-setting-wrap[data-in="true"] .ev-st-pop{ opacity:1; transform:none; filter:none; }
-
-@media (prefers-reduced-motion:reduce){
-  .ev-setting-card,.ev-setting-h > span > i,.ev-st-pop,.ev-setting-wrap .ev-room-eyebrow::before{ transition:none !important; }
-  .ev-setting-card,.ev-st-pop,.ev-setting-h > span > i{ opacity:1; transform:none; filter:none; }
-  .ev-setting-wrap .ev-room-eyebrow::before{ transform:none; }
-}
-
-/* SECTION 10: The room carousel */
-.ev-ideas-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(38px,5.55vw,80px); line-height:.96; letter-spacing:-.015em;
-  color:var(--ev-ivory); max-width:8.6em;
-}
-.ev-ideas-p{
-  font-family:'Montserrat',sans-serif; font-weight:500;
-  font-size:clamp(14px,1.2vw,17px); line-height:1.6; letter-spacing:0; color:var(--ev-ivory-muted);
-}
-.ev-drag{
-  position:relative; overflow:hidden; padding:20px 0; margin:-20px 0;
-  touch-action:pan-y; cursor:grab; user-select:none;
-}
-.ev-drag[data-dragging="true"]{ cursor:grabbing; }
-.ev-track{
-  --ev-gutter:20px;
-  position:relative; display:flex; width:max-content; gap:clamp(16px,1.95vw,28px);
-  padding-left:var(--ev-gutter); will-change:transform;
-}
-.ev-card{
-  position:relative; flex:0 0 auto; width:clamp(220px,23.6vw,340px); aspect-ratio:400/440;
-  overflow:hidden; border-radius:4px; background:var(--ev-navy-950);
-  transition:transform .7s cubic-bezier(.22,1,.36,1), box-shadow .7s ease, opacity .5s ease;
-}
-.ev-card img{
-  position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none;
-  transform:scale(1); transition:transform 1.2s cubic-bezier(.22,1,.36,1);
-}
-.ev-card-shade{
-  position:absolute; inset:0; transition:opacity .6s ease;
-  background:linear-gradient(180deg, rgba(10,12,23,0) 45%, rgba(10,12,23,.85) 100%);
-}
-.ev-card::after{
-  content:""; position:absolute; inset:0; border-radius:4px; pointer-events:none;
-  border:1px solid rgba(217,169,63,0); transition:border-color .6s ease;
-}
-.ev-card-body{
-  position:absolute; left:20px; right:20px; bottom:20px;
-  transition:transform .7s cubic-bezier(.22,1,.36,1);
-}
-.ev-card-tag{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:10px; line-height:1.4;
-  letter-spacing:.26em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-card-title{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(18px,1.55vw,22px); line-height:1.12; letter-spacing:-.005em;
-  color:var(--ev-ivory); margin-top:6px;
-}
-.ev-hint{
-  display:flex; align-items:center; gap:10px;
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:10px; letter-spacing:.24em;
-  text-transform:uppercase; color:var(--ev-gold-500); white-space:nowrap;
-}
-@media (hover:hover){
-  .ev-drag:hover .ev-card:not(:hover){ opacity:.55; }
-  .ev-card:hover{ transform:translateY(-10px); box-shadow:0 30px 60px -28px rgba(0,0,0,.8); }
-  .ev-card:hover img{ transform:scale(1.1); }
-  .ev-card:hover::after{ border-color:rgba(217,169,63,.65); }
-  .ev-card:hover .ev-card-body{ transform:translateY(-8px); }
-}
-@media (prefers-reduced-motion:reduce){
-  .ev-card,.ev-card img,.ev-card-body,.ev-card::after{ transition:none !important; }
-}
-
-/* SECTION 11: You're invited */
-.ev-invite{
-  position:relative; overflow:hidden; text-align:center; background:var(--ev-navy-950);
-  min-height:clamp(680px,69.4vw,calc(1000px * var(--ev-k)));
-  display:flex; align-items:center; justify-content:center;
-  padding:clamp(72px,8vw,120px) 0;
-}
-.ev-invite-media{ position:absolute; inset:0; overflow:hidden; }
-.ev-invite-bg{
-  width:100%; height:100%; object-fit:cover; object-position:50% 45%;
-  transform-origin:50% 52%; /* zoom gate ke opening ke beech me */
-  will-change:transform; user-select:none;
-}
-.ev-invite-content{ position:relative; z-index:1; width:100%; }
-.ev-invite-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(48px,9.2vw,132px); line-height:.92; letter-spacing:-.02em;
-  text-align:center; color:var(--ev-ivory);
-}
-.ev-invite-date{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(32px,3.9vw,56px); line-height:1.04; letter-spacing:-.01em; text-align:center;
-}
-.ev-invite-p{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:clamp(14px,1.25vw,18px); line-height:1.6;
-  letter-spacing:0; text-align:center; color:var(--ev-ivory-muted);
-  max-width:34rem; margin-left:auto; margin-right:auto;
-}
-.ev-invite-q{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(18px,1.85vw,26px); line-height:1.12; letter-spacing:-.005em;
-  text-align:center; color:var(--ev-ivory);
-}
-.ev-invite-btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:12px;
-  width:346px; max-width:100%; height:60px; padding:20px 30px; border-radius:999px;
-  background:linear-gradient(90deg,#9C7222 0%,#F6DD8E 35%,#D9A93F 60%,#F6DD8E 100%);
-  color:#0A0C17; font-family:'Montserrat',sans-serif; font-weight:700; font-size:14px; line-height:1;
-  letter-spacing:.14em; text-transform:uppercase; white-space:nowrap;
-  transition:transform .3s ease, filter .3s ease;
-}
-.ev-invite-btn:hover{ transform:translateY(-2px); filter:brightness(1.06); }
-.ev-invite-meta{
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:11px; line-height:1.4;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--ev-ivory-muted);
-}
-
-/* ===== SCENES (section 3 -> 11) — ab pin nahi, normal scroll ===== */
-.ev-scene{ position:relative; }
-.ev-scene-stick{ position:relative; }
-.ev-scene-body{ position:relative; width:100%; }
-@media (min-width:1024px){
-  .ev-scene-stick{
-    min-height:min(calc(100svh - 72px), calc(clamp(560px,50vw,900px) * var(--ev-k)));
-    overflow:hidden; display:flex; align-items:center;
-    .ev-right.ev-scene-stick{ width:100%; }
-  }
-    
-
-}
-
-/* =====================================================================
-   HERO RESPONSIVE, --hu = ek unit, sab text isi se scale hota hai
-   ===================================================================== */
-.ev-hero{ --hu:clamp(7px, min(1.15vw, 1.7vh), 40px); }
-.ev-hero-pad{
-  padding-left:max(clamp(20px,6.5vw,96px), calc((100vw - 1280px) / 2 + 48px));
-  padding-right:clamp(20px,6.5vw,96px);
-}
-@media (max-width:1023px){ .ev-hero{ --hu:clamp(8px, 1.3vw, 14px); } }
-@media (max-width:767px){ .ev-hero{ --hu:clamp(5px, 1.4vw, 9px); } }
-
-/* headings */
-.ev-hero .ev-h.ev-h-xl{ font-size:max(34px, calc(var(--hu)*7.2)); }
-.ev-hero .ev-chbig .ev-h{ font-size:max(31px, calc(var(--hu)*6.5)); }
-.ev-hero .ev-h{ margin-top:calc(var(--hu)*1.4); }
-
-/* eyebrow + paragraph */
-.ev-hero .ev-eyebrow,
-.ev-hero .ev-chbig .ev-eyebrow{ font-size:max(11px, calc(var(--hu)*.95)); }
-.ev-hero .ev-body,
-.ev-hero .ev-chbig .ev-body{
-  font-size:max(14px, calc(var(--hu)*1.25));
-  max-width:calc(var(--hu)*36);
-  margin-top:calc(var(--hu)*1.6);
-}
-
-/* When / Where */
-.ev-hero .ev-meta-label{ font-size:max(10px, calc(var(--hu)*.75)); }
-.ev-hero .ev-meta-value{ font-size:max(17px, calc(var(--hu)*1.6)); }
-.ev-hero .ev-meta-sub{ font-size:max(12px, calc(var(--hu)*.95)); }
-
-/* buttons */
-.ev-hero .ev-btn-gold{
-  width:max(220px, calc(var(--hu)*17)); height:max(44px, calc(var(--hu)*3.5));
-  padding:0 calc(var(--hu)*2); font-size:max(11px, calc(var(--hu)*.82));
-}
-.ev-hero .ev-btn-ghost{
-  height:max(44px, calc(var(--hu)*3.5)); padding:0 calc(var(--hu)*2);
-  font-size:max(11px, calc(var(--hu)*.82));
-}
-
-/* note + handwritten */
-.ev-hero .ev-note{ font-size:max(10px, calc(var(--hu)*.75)); }
-.ev-hero .ev-hand{ font-size:max(22px, calc(var(--hu)*2.2)); }
-
-/* hero container = footer ka .section; yahan sirf vertical spacing */
-.ev-hero-inner{ padding-top:32px; padding-bottom:32px; }
-.ev-hero-shade{
-  background:linear-gradient(90deg, rgba(10,12,23,.85) 0%, rgba(10,12,23,.65) 42%, rgba(10,12,23,.08) 75%, rgba(10,12,23,0) 100%);
-}
-
-/* mobile */
-@media (max-width:767px){
-  .ev-hero-inner{ padding-top:24px; padding-bottom:72px; }
-  .ev-hero-shade{
-    background:linear-gradient(180deg, rgba(10,12,23,.5) 0%, rgba(10,12,23,.78) 55%, rgba(10,12,23,.92) 100%);
-  }
-  .ev-textglow{ padding:20px 0; margin:-20px 0; }
-
-  .ev-hero .ev-h.ev-h-xl{ font-size:clamp(31px,9.6vw,44px); }
-  .ev-hero .ev-chbig .ev-h{ font-size:clamp(29px,9.2vw,42px); }
-  .ev-hero .ev-h{ margin-top:12px; }
-  .ev-hero .ev-eyebrow,
-  .ev-hero .ev-chbig .ev-eyebrow{ font-size:10.5px; letter-spacing:.2em; }
-  .ev-hero .ev-body,
-  .ev-hero .ev-chbig .ev-body{ font-size:13.5px; line-height:1.5; margin-top:14px; max-width:100%; }
-  .ev-hero .ev-meta-value{ font-size:15px; }
-
-  .ev-hero .ev-btn-gold{ width:auto; flex:0 0 auto; min-width:220px; height:44px; padding:0 24px; }
-}
-
-/* chhoti height wale phones: chapter 1 ka paragraph hata do taaki kuch kate nahi */
-@media (max-width:767px) and (max-height:700px){
-  .ev-hero .ev-ch1 .ev-body{ display:none; }
-}
-
-/* landscape phone / kam height wali screen */
-@media (max-height:520px){
-  .ev-hero{ --hu:clamp(4px, 1.5vh, 7px); }
-  .ev-hero .ev-h.ev-h-xl,
-  .ev-hero .ev-chbig .ev-h{ font-size:calc(var(--hu)*6.3); }
-  .ev-hero .ev-body{ font-size:12px; }
-}
-
-/* ===== BADI SCREENS (1800px+): text bada + elements ke beech gap bada ===== */
-@media (min-width:1800px){
-  .ev-hero{ --hu:clamp(20px, min(1.5vw, 2vh), 60px); }
-
-  /* text ko thoda aur left se shuru karo taaki page pe achhe se failey */
-  .ev-hero-pad{
-    padding-left:max(96px, calc((100vw - 1600px) / 2 + 48px));
-    padding-right:96px;
-  }
-
-  /* eyebrow, heading, paragraph, meta, buttons, note — sabke beech ka gap */
-  .ev-hero .ev-textglow > *:not(.absolute) + *:not(.absolute){
-    margin-top:calc(var(--hu) * 1.3) !important;
-  }
-  /* When / Where ke beech ka gap */
-  .ev-hero .ev-textglow .grid{
-    column-gap:calc(var(--hu) * 4);
-    row-gap:calc(var(--hu) * 1.3);
-  }
-  /* buttons ke beech ka gap */
-  .ev-hero .ev-textglow .flex{ gap:calc(var(--hu) * 1); }
-}
-
-/* =====================================================================
-   ALL SECTIONS RESPONSIVE (3 -> 11)
-   --ev-k = scale factor, --ev-max = content ki max width
-   ===================================================================== */
-.ev-root{ --ev-k:1; --ev-max:1440px; }
-@media (min-width:1600px){ .ev-root{ --ev-k:1.1; --ev-max:1584px; } }
-@media (min-width:1920px){ .ev-root{ --ev-k:1.3; --ev-max:1872px; } }
-@media (min-width:2200px){ .ev-root{ --ev-k:1.5; --ev-max:2160px; } }
-@media (min-width:2560px){ .ev-root{ --ev-k:1.75; --ev-max:2520px; } }
-
-/* tablet: experience image ab poori width nahi lega */
-@media (max-width:1023px){
-  .ev-exp-img{ max-width:min(100%,520px); margin-left:auto; margin-right:auto; }
-}
-
-/* chhote phones (320 - 420px) */
-@media (max-width:420px){
-  .ev-room-h,.ev-right-h{ font-size:38px; }
-  .ev-exp-h,.ev-setting-h{ font-size:40px; }
-  .ev-ideas-h{ font-size:36px; }
-  .ev-invite-h{ font-size:42px; }
-  .ev-numeral{ font-size:44px; }
-}
-
-/* badi screens: sab kuch scale hota hai (1440 ka design bada hokar) */
-@media (min-width:1600px){
-  .ev-pad{ --ev-pad:calc(96px * var(--ev-k)); }
-  .ev-sec{ padding-top:calc(96px * var(--ev-k)); padding-bottom:calc(96px * var(--ev-k)); }
-
-  /* marquee */
-  .ev-marquee{ padding:calc(22px * var(--ev-k)) 0; }
-  .ev-marquee-item{ font-size:calc(32px * var(--ev-k)); gap:calc(36px * var(--ev-k)); padding-right:calc(36px * var(--ev-k)); }
-
-  /* section 3 + common */
-  .ev-room-eyebrow{ font-size:calc(13px * var(--ev-k)); gap:calc(14px * var(--ev-k)); }
-  .ev-room-eyebrow::before{ width:calc(40px * var(--ev-k)); }
-  .ev-room-h{ font-size:calc(88px * var(--ev-k)); }
-  .ev-room-p1{ font-size:calc(18px * var(--ev-k)); max-width:calc(32rem * var(--ev-k)) !important; }
-  .ev-room-p2{ font-size:calc(15px * var(--ev-k)); max-width:calc(32rem * var(--ev-k)) !important; }
-  .ev-room-btn{ height:calc(56px * var(--ev-k)); padding:0 calc(26px * var(--ev-k)); font-size:calc(14px * var(--ev-k)); }
-
-  /* section 4 */
-  .ev-why-grid{ gap:calc(40px * var(--ev-k)); }
-  .ev-why-item{ padding-top:calc(36px * var(--ev-k)); }
-  .ev-numeral{ font-size:calc(68px * var(--ev-k)); }
-  .ev-why-label{ font-size:calc(13px * var(--ev-k)); }
-  .ev-why-text{ font-size:calc(16px * var(--ev-k)); }
-
-  /* section 5 */
-  .ev-scene-stick.ev-right .ev-right-body{ max-width:none; width:100%; padding-left:3vw; padding-right:3vw; }
-  .ev-right-h{ font-size:calc(148px * var(--ev-k)); }
-  .ev-right-sub{ font-size:calc(34px * var(--ev-k)); }
-  .ev-right-eyebrow{ font-size:calc(13px * var(--ev-k)); }
-
-  /* section 6 */
-  .ev-people-grid{ gap:calc(40px * var(--ev-k)); }
-  .ev-pp-h{ font-size:calc(94px * var(--ev-k)); }
-  .ev-pp-sub{ font-size:calc(18px * var(--ev-k)); max-width:calc(34rem * var(--ev-k)); }
-  .ev-person-initials{ font-size:calc(108px * var(--ev-k)); }
-  .ev-person-co{ font-size:calc(8px * var(--ev-k)); }
-  .ev-person-name{ font-size:calc(30px * var(--ev-k)); }
-  .ev-person-role{ font-size:calc(11px * var(--ev-k)); }
-  .ev-person-link{ font-size:calc(14px * var(--ev-k)); }
-
-  /* section 7 */
-  .ev-ev-h{ font-size:calc(100.8px * var(--ev-k)); }
-  .ev-ev-sub{ font-size:calc(18.72px * var(--ev-k)); }
-  .ev-tl{ gap:calc(40px * var(--ev-k)); }
-  .ev-tl-item{ gap:calc(6px * var(--ev-k)) calc(24px * var(--ev-k)); grid-template-columns:calc(210px * var(--ev-k)) 1fr; padding-bottom:calc(40px * var(--ev-k)); }
-  .ev-tl-time{ font-size:calc(13px * var(--ev-k)); padding-top:calc(10px * var(--ev-k)); }
-  .ev-tl-title{ font-size:calc(40.32px * var(--ev-k)); }
-  .ev-tl-text{ font-size:calc(16px * var(--ev-k)); max-width:calc(34rem * var(--ev-k)); margin-top:calc(8px * var(--ev-k)); }
-  .ev-tl-tip{ transform:scale(var(--ev-k)); }
-
-  /* section 8 */
-  .ev-exp-h{ font-size:calc(100px * var(--ev-k)); }
-  .ev-exp-lead{ font-size:calc(20px * var(--ev-k)); max-width:calc(34rem * var(--ev-k)); }
-  .ev-exp-cols{ max-width:calc(34rem * var(--ev-k)); gap:calc(24px * var(--ev-k)); }
-  .ev-exp-label{ font-size:calc(11px * var(--ev-k)); }
-  .ev-exp-text{ font-size:calc(14px * var(--ev-k)); }
-
-  /* section 9 */
-  .ev-setting-card{ width:calc(618px * var(--ev-k)); padding:calc(48px * var(--ev-k)); }
-  .ev-setting-h{ font-size:calc(88px * var(--ev-k)); }
-  .ev-setting-sub{ font-size:calc(40px * var(--ev-k)); }
-  .ev-setting-p{ font-size:calc(16px * var(--ev-k)); max-width:calc(28rem * var(--ev-k)) !important; }
-  .ev-setting-addr{ font-size:calc(13px * var(--ev-k)); max-width:calc(28rem * var(--ev-k)) !important; }
-  .ev-setting-btn{ height:calc(60px * var(--ev-k)); padding:0 calc(30px * var(--ev-k)); font-size:calc(14px * var(--ev-k)); }
-  .ev-setting-tag{ font-size:calc(40px * var(--ev-k)); }
-
-  /* section 10 */
-  .ev-ideas-h{ font-size:calc(80px * var(--ev-k)); }
-  .ev-ideas-p{ font-size:calc(17px * var(--ev-k)); }
-  .ev-hint{ font-size:calc(10px * var(--ev-k)); }
-  .ev-track{ gap:calc(28px * var(--ev-k)); }
-  .ev-card{ width:calc(340px * var(--ev-k)); }
-  .ev-card-body{ left:calc(20px * var(--ev-k)); right:calc(20px * var(--ev-k)); bottom:calc(20px * var(--ev-k)); }
-  .ev-card-tag{ font-size:calc(10px * var(--ev-k)); }
-  .ev-card-title{ font-size:calc(22px * var(--ev-k)); }
-
-  /* section 11 */
-  .ev-invite-h{ font-size:calc(132px * var(--ev-k)); }
-  .ev-invite-date{ font-size:calc(56px * var(--ev-k)); }
-  .ev-invite-p{ font-size:calc(18px * var(--ev-k)); max-width:calc(34rem * var(--ev-k)); }
-  .ev-invite-q{ font-size:calc(26px * var(--ev-k)); }
-  .ev-invite-btn{ width:calc(346px * var(--ev-k)); height:calc(60px * var(--ev-k)); font-size:calc(14px * var(--ev-k)); }
-  .ev-invite-meta{ font-size:calc(11px * var(--ev-k)); }
-}
-
-/* grids jinke column width fixed px me hain (sirf 1024+ par) */
-@media (min-width:1600px) and (min-width:1024px){
-  .ev-exp-grid{ grid-template-columns:minmax(0,1fr) minmax(0,calc(560px * var(--ev-k))); }
-}
- 
-
-/* ===== SECTION 10.5: SPONSOR ===== */
-.ev-sponsor{
-  position:relative; overflow:hidden;
-  padding-top:clamp(72px,8vw,128px); padding-bottom:clamp(72px,8vw,128px);
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@600;700;800&family=Space+Mono:wght@400;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+.ev{
+  /* Header/Footer jaisa content width: max-w-7xl (1280) - 2 x 32px padding = 1216px.
+     --vw = scrollbar ke bina screen width (JS se set), --cw = content width. */
+  --vw:100vw; --cw:min(calc(var(--vw) - 64px), 1216px); --hg:calc((var(--vw) - var(--cw)) / 2);
+  --navy:#10121f; --navy2:#151933; --cream:#f1ede5; --ink:#161a2b; --muted:#6b6f7d;
+  --gold:#f5c518; --mustard:#d29f24; --line:rgba(22,26,43,.18);
+  --serif:'Instrument Serif',Georgia,serif;
+  --display:'Libre Caslon Text',Georgia,serif;
+  --wide:'Montserrat','Onest',system-ui,sans-serif;
+  --sans:'Onest',system-ui,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.7,.1,1);
+  font-family:var(--sans); color:var(--ink); overflow-x:clip;
+}
+.ev *{ box-sizing:border-box; }
+.ev-wrap{ width:100%; max-width:1320px; margin:0 auto; padding:0 clamp(20px,4vw,48px); }
+
+/* ---------- reveal primitives ---------- */
+.ev-rv{ opacity:0; transform:translateY(28px); filter:blur(8px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+.ev-rv.is-in{ opacity:1; transform:none; filter:none; }
+.ev-words .ev-w{ display:inline-block; opacity:0; transform:translateY(.35em); filter:blur(10px);
+  transition:opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease); }
+.ev-words.is-in .ev-w{ opacity:1; transform:none; filter:none; }
+
+/* ---------- buttons ---------- */
+.ev-pill{ display:inline-flex; align-items:center; gap:10px; border-radius:999px; font-weight:600;
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .3s, color .3s; text-decoration:none; }
+.ev-pill:hover{ transform:translateY(-2px); }
+.ev-pill .ev-pill-ic{ display:grid; place-items:center; width:30px; height:30px; border-radius:999px;
+  transition:transform .4s var(--ease); }
+.ev-pill:hover .ev-pill-ic{ transform:translateX(3px) rotate(-45deg); }
+
+/* =========================== 1. HERO =========================== */
+/* Figma: 1440 x 700 frame. Sab size clamp() se scale hote hain (mobile -> 4K). */
+.ev-hero{ position:relative; isolation:isolate; overflow:hidden; color:#fff; background:#0d1024;
+  min-height:max(640px, min(calc(100svh - 72px), 52vw)); display:flex; flex-direction:column; }
+.ev-hero-media{ position:absolute; inset:-3%; z-index:-2;
+  transform:translate3d(var(--mx,0px),var(--my,0px),0); transition:transform 1.2s cubic-bezier(.2,.7,.1,1); }
+.ev-hero-img{ width:100%; height:100%; object-fit:cover; object-position:center 28%; display:block;
+  opacity:0; transform:scale(1.14); filter:blur(6px) brightness(.8);
+  animation:evHeroImg 2.4s var(--ease) .05s forwards, evKen 26s ease-in-out 2.4s infinite alternate; }
+@keyframes evHeroImg{ to{ opacity:1; transform:scale(1.04); filter:none; } }
+@keyframes evKen{ from{ transform:scale(1.04); } to{ transform:scale(1.1) translate3d(-1%, -1%, 0); } }
+.ev-hero::before{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(ellipse 60% 50% at 30% 45%, rgba(40,44,92,.55) 0%, rgba(40,44,92,0) 70%),
-    var(--ev-navy-900);
-}
-.ev-sp-grid{ display:grid; grid-template-columns:minmax(0,1fr); gap:28px; }
-.ev-sp-head{ order:1; }
-.ev-sp-tagwrap{ order:2; }
-.ev-sp-cards{ order:3; }
-.ev-sp-formwrap{ order:4; display:flex; }
-@media (min-width:1024px){
-  .ev-sp-grid{
-    grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
-    grid-template-rows:auto 1fr;
-    column-gap:clamp(48px,5.5vw,96px); row-gap:40px;
-  }
-  .ev-sp-head{ grid-column:1; grid-row:1; }
-  .ev-sp-tagwrap{ grid-column:2; grid-row:1; align-self:end; text-align:right; }
-  .ev-sp-cards{ grid-column:1; grid-row:2; }
-  .ev-sp-formwrap{ grid-column:2; grid-row:2; }
-}
+    linear-gradient(180deg, rgba(13,16,36,0) 0%, rgba(13,16,36,.04) 30%, rgba(13,16,36,.38) 58%, rgba(13,16,36,.86) 84%, #0d1024 100%),
+    radial-gradient(60% 46% at 50% 50%, rgba(8,10,26,.3), transparent 72%); }
+/* chamakti roshni jo dheere se gujarti hai */
+.ev-hero-sheen{ position:absolute; inset:0; z-index:-1; pointer-events:none; mix-blend-mode:soft-light;
+  background:linear-gradient(105deg, transparent 35%, rgba(255,223,120,.35) 50%, transparent 65%);
+  transform:translateX(-100%); animation:evSheen 9s ease-in-out 2.6s infinite; }
+@keyframes evSheen{ 0%{ transform:translateX(-100%) } 45%,100%{ transform:translateX(100%) } }
 
-.ev-sp-eyebrow{
-  display:flex; align-items:center; gap:18px;
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:12px;
-  letter-spacing:.3em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-sp-line{ display:block; width:40px; height:1px; background:var(--ev-gold-500); }
-.ev-sp-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(44px,6.2vw,92px); line-height:.95; letter-spacing:-.02em; color:var(--ev-ivory);
-}
-.ev-sp-h > span{ display:block; }
-.ev-sp-lead{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:clamp(14px,1.25vw,18px);
-  line-height:1.65; color:var(--ev-ivory-muted); max-width:34rem;
-}
-.ev-sp-tag{ font-size:clamp(24px,2.6vw,38px); transform:rotate(-3deg); transform-origin:right center; display:inline-block; }
-@media (max-width:1023px){ .ev-sp-tag{ transform-origin:left center; } }
+.ev-hero-in{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding-top:clamp(40px, 7.5vw, 130px); padding-bottom:clamp(20px, 3.056vw, 56px); }
 
-/* plan cards */
-.ev-sp-list{ display:flex; flex-direction:column; gap:14px; height:100%; }
-.ev-sp-card{
-  flex:1; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:20px;
-  width:100%; text-align:left; cursor:pointer; color:inherit;
-  padding:20px 28px; border-radius:6px;
-  background:rgba(10,12,23,.55); border:1px solid rgba(217,169,63,.4);
-  transition:transform .3s ease, border-color .3s ease, background .3s ease, box-shadow .3s ease;
-}
-.ev-sp-card:hover{ transform:translateY(-2px); border-color:rgba(246,221,142,.8); }
-.ev-sp-card:focus-visible{ outline:2px solid var(--ev-gold-300); outline-offset:3px; }
-.ev-sp-card.is-on{
-  background:linear-gradient(180deg, rgba(217,169,63,.28), rgba(217,169,63,.14));
-  border-color:var(--ev-gold-300); box-shadow:0 18px 44px -22px rgba(217,169,63,.7);
-}
-.ev-sp-radio{
-  width:20px; height:20px; border-radius:50%; border:1.5px solid var(--ev-ivory-muted);
-  display:grid; place-items:center; flex:none; transition:border-color .3s ease;
-}
-.ev-sp-radio::after{
-  content:""; width:10px; height:10px; border-radius:50%; background:var(--ev-gold-300);
-  transform:scale(0); transition:transform .25s ease;
-}
-.ev-sp-card.is-on .ev-sp-radio{ border-color:var(--ev-gold-300); }
-.ev-sp-card.is-on .ev-sp-radio::after{ transform:scale(1); }
-.ev-sp-card-main{ display:flex; flex-direction:column; gap:6px; min-width:0; }
-.ev-sp-card-title{
-  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-  font-family:'Instrument Serif',serif; font-style:italic; font-size:clamp(22px,2vw,28px); line-height:1.05; color:var(--ev-ivory);
-}
-.ev-sp-badge{
-  font-style:normal; font-family:'Montserrat',sans-serif; font-weight:700; font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; color:var(--ev-navy); padding:4px 10px; border-radius:999px;
-  background:linear-gradient(90deg,#9C7222 0%,#F6DD8E 55%,#D9A93F 100%);
-}
-.ev-sp-card-desc{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:clamp(12px,.95vw,14px);
-  line-height:1.5; color:var(--ev-ivory-muted); max-width:26rem;
-}
-.ev-sp-card-price{
-  font-family:'Instrument Serif',serif; font-style:italic; font-size:clamp(28px,2.7vw,40px);
-  line-height:1; color:var(--ev-gold-500); white-space:nowrap;
-}
-.ev-sp-card.is-on .ev-sp-card-price{ color:var(--ev-gold-300); }
-@media (max-width:520px){
-  .ev-sp-card{ padding:16px 16px; gap:14px; }
-}
+/* top box: BrickShare Capital presents · date */
+.ev-eyebrow-box{ margin:0; font-family:'JetBrains Mono',ui-monospace,monospace; font-weight:800; font-style:normal;
+  font-size:clamp(11px, 1.389vw, 24px); line-height:1; letter-spacing:clamp(1.2px, 0.181vw, 3px);
+  text-align:center; text-transform:uppercase; color:#000627; background:#FFFFFF3B;
+  padding:clamp(10px, 0.972vw, 18px) clamp(14px, 1.25vw, 24px);
+  backdrop-filter:blur(10px) saturate(1.2); -webkit-backdrop-filter:blur(10px) saturate(1.2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px -12px rgba(0,0,0,.35);
+  position:relative; overflow:hidden; }
+.ev-eyebrow-box span{ display:block; }
+.ev-eyebrow-box span + span{ margin-top:clamp(5px, 0.556vw, 10px); }
+.ev-eyebrow-box::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%);
+  transform:translateX(-120%); animation:evGlint 1.4s var(--ease) 1.3s forwards; }
+@keyframes evGlint{ to{ transform:translateX(120%) } }
 
-/* form */
-.ev-sp-form{
-  flex:1; display:flex; flex-direction:column;
-  padding:clamp(24px,3vw,44px); border-radius:6px;
-  background:var(--ev-navy-950); border:1px solid rgba(217,169,63,.55);
-}
-.ev-sp-form-h{
-  font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(28px,2.7vw,38px); line-height:1; color:var(--ev-ivory);
-}
-.ev-sp-form-p{
-  font-family:'Montserrat',sans-serif; font-weight:500; font-size:13px; line-height:1.6;
-  color:var(--ev-ivory-muted); margin-top:14px; margin-bottom:8px;
-}
-.ev-sp-label{
-  display:block; margin-top:18px; margin-bottom:8px;
-  font-family:'Montserrat',sans-serif; font-weight:600; font-size:10px;
-  letter-spacing:.26em; text-transform:uppercase; color:var(--ev-gold-500);
-}
-.ev-sp-input{
-  width:100%; height:56px; padding:0 18px; border-radius:4px;
-  background:var(--ev-navy-950); border:1px solid rgba(217,169,63,.45);
-  color:var(--ev-ivory); font-family:'Montserrat',sans-serif; font-weight:500; font-size:14px;
-  transition:border-color .25s ease, box-shadow .25s ease;
-}
-.ev-sp-input::placeholder{ color:rgba(185,179,166,.5); }
-.ev-sp-input:focus{ outline:none; border-color:var(--ev-gold-300); box-shadow:0 0 0 3px rgba(246,221,142,.14); }
-.ev-sp-select{
-  appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:44px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23F3ECDD'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 18px center;
-  margin-bottom:28px;
-}
-.ev-sp-select option{ background:#0A0C17; color:#F3ECDD; }
-.ev-sp-error{ margin-top:14px; font-family:'Montserrat',sans-serif; font-weight:600; font-size:12px; color:#F2A39B; }
-.ev-sp-submit{
-  margin-top:auto; /* form ko cards ki height tak stretch karta hai */
-  min-height:62px;
-  display:flex; align-items:center; justify-content:space-between;
-  width:100%; height:62px; padding:0 28px; border-radius:4px; cursor:pointer;
-  background:linear-gradient(90deg,#9C7222 0%,#F6DD8E 55%,#D9A93F 100%);
-  color:var(--ev-navy-950); font-family:'Montserrat',sans-serif; font-weight:700; font-size:13px;
-  letter-spacing:.2em; text-transform:uppercase;
-  box-shadow:0 14px 36px -14px rgba(217,169,63,.75);
-  transition:transform .3s ease, filter .3s ease;
-}
+/* heading */
+.ev-hero-h{ margin:clamp(22px, 3.333vw, 60px) 0 0; font-family:'Libre Baskerville',Georgia,serif;
+  font-weight:600; font-style:normal; text-transform:uppercase; text-align:center; color:#FFFFFF;
+  font-size:clamp(32px, 6.25vw, 112px); line-height:1.156; letter-spacing:clamp(.8px, 0.181vw, 3.2px);
+  text-shadow:0 8px 40px rgba(0,0,0,.35); }
+.ev-hero-h .ev-line{ display:block; white-space:nowrap; }
+.ev-hero-h .ev-gold{ font-style:italic; color:#F2C230;
+  background:linear-gradient(100deg,#d9a52a 0%,#f6cf3a 30%,#fff1a8 45%,#f6cf3a 60%,#e2ae2c 100%);
+  background-size:250% 100%; background-position:100% 0;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; text-shadow:none;
+  padding-right:.06em; }
+.ev-hero .ev-w.ev-gold{ animation:evIn 1.1s var(--ease) forwards, evShine 6s ease-in-out 2.4s infinite; }
+@keyframes evShine{ 0%,100%{ background-position:100% 0 } 50%{ background-position:0% 0 } }
 
-.ev-sp-submit:hover{ transform:translateY(-2px); filter:brightness(1.06); }
-.ev-sp-submit:disabled{ opacity:.6; cursor:wait; transform:none; }
-.ev-sp-fine{
-  margin-top:16px; font-family:'Montserrat',sans-serif; font-weight:500; font-size:11px;
-  line-height:1.6; color:var(--ev-ivory-muted);
-}
+/* facts box */
+.ev-facts{ margin-top:clamp(26px, 2.778vw, 50px); width:min(54.167vw, 100%); min-width:min(640px,100%);
+  display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(8px, 0.833vw, 14px);
+  padding:clamp(12px, 0.972vw, 16px) clamp(12px, 1.042vw, 18px) clamp(12px, 1.042vw, 18px);
+  border-radius:clamp(12px, 1.111vw, 18px); background:#FFFFFF1A; border:1px solid #FFFFFF33;
+  backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2); text-align:left;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.55); }
+.ev-fact{ min-width:0; }
+.ev-fact small{ display:block; padding-left:4px; font-family:var(--sans); font-size:clamp(9px, 0.694vw, 11px);
+  letter-spacing:.16em; font-weight:500; color:rgba(255,255,255,.72); }
+.ev-fact b{ display:block; margin-top:clamp(8px, 0.833vw, 14px); padding:clamp(11px, 0.903vw, 15px) clamp(12px, 0.972vw, 16px);
+  border-radius:clamp(8px, 0.625vw, 10px); background:rgba(14,17,38,.62); border:1px solid rgba(255,255,255,.04);
+  font-family:var(--sans); font-weight:600; font-style:normal; font-size:clamp(13px, 1.042vw, 17px);
+  line-height:1; letter-spacing:0; color:#FEDF27; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:background .35s, transform .35s var(--ease), border-color .35s; }
+.ev-fact:hover b{ background:rgba(14,17,38,.82); border-color:rgba(254,223,39,.35); transform:translateY(-2px); }
 
-/* success popup */
-.ev-sp-overlay{
-  position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:20px;
-  background:rgba(5,7,14,.74); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-}
-.ev-sp-pop{
-  position:relative; width:100%; max-width:540px; padding:clamp(28px,4vw,44px); border-radius:8px;
-  background:var(--ev-navy-950); border:1px solid var(--ev-gold-500);
-  box-shadow:0 40px 90px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(246,221,142,.08);
-}
-.ev-sp-close{
-  position:absolute; top:14px; right:14px; width:32px; height:32px; border-radius:50%;
-  display:grid; place-items:center; cursor:pointer; color:var(--ev-ivory-muted);
-  border:1px solid rgba(217,169,63,.35); transition:color .25s ease, border-color .25s ease;
-}
-.ev-sp-close:hover{ color:var(--ev-ivory); border-color:var(--ev-gold-300); }
-.ev-sp-check{
-  display:grid; place-items:center; width:56px; height:56px; border-radius:50%;
-  background:linear-gradient(135deg,#9C7222 0%,#F6DD8E 55%,#D9A93F 100%); color:var(--ev-navy-950);
-}
-.ev-sp-pop-h{
-  margin-top:24px; font-family:'Instrument Serif',serif; font-style:italic; font-weight:400;
-  font-size:clamp(34px,4.2vw,46px); line-height:1; color:var(--ev-ivory);
-}
-.ev-sp-pop-p{
-  margin-top:16px; font-family:'Montserrat',sans-serif; font-weight:500; font-size:16px;
-  line-height:1.7; color:var(--ev-ivory-muted);
-}
-.ev-sp-pop-next{
-  margin-top:18px; font-family:'Montserrat',sans-serif; font-weight:500; font-size:14px;
-  line-height:1.6; color:var(--ev-gold-300);
-}
-@media (prefers-reduced-motion:reduce){
-  .ev-sp-card,.ev-sp-submit,.ev-sp-radio::after{ transition:none !important; }
-}
-  
-/* ===== SPONSOR: compact sizes (purani values ko override karta hai) ===== */
-.ev-sponsor{ padding-top:clamp(56px,5.5vw,88px); padding-bottom:clamp(56px,5.5vw,88px); }
-.ev-sp-grid{ gap:20px; }
-@media (min-width:1024px){
-  .ev-sp-grid{ column-gap:clamp(32px,4vw,64px); row-gap:28px; }
-}
-.ev-sp-eyebrow{ font-size:11px; gap:14px; }
-.ev-sp-line{ width:32px; }
-.ev-sp-h{ font-size:clamp(34px,4.4vw,64px); }
-.ev-sp-lead{ font-size:clamp(13px,1vw,15px); max-width:30rem; }
-.ev-sp-tag{ font-size:clamp(20px,1.9vw,28px); }
+/* bottom row */
+.ev-hero-foot{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  padding-bottom:clamp(24px, 3.333vw, 60px);
+  font-family:var(--sans); font-size:clamp(11px, 0.833vw, 14px); color:rgba(255,255,255,.7); }
+.ev-hero-foot .r{ text-align:right; }
+.ev-wrap.ev-hero-foot{ max-width:none; padding-left:var(--hg); padding-right:var(--hg); }
+@media (max-width:1023px){ .ev-wrap.ev-hero-foot{ padding-left:32px; padding-right:32px; } }
+.ev-btn-cream{ position:relative; background:#F3EFE6; color:#131627; font-family:var(--sans); font-weight:500; font-style:normal;
+  font-size:clamp(13px, 0.972vw, 16px); line-height:1; letter-spacing:.4px;
+  padding:clamp(6px, 0.486vw, 8px) clamp(6px, 0.486vw, 8px) clamp(6px, 0.486vw, 8px) clamp(20px, 1.806vw, 30px);
+  gap:clamp(12px, 1.25vw, 20px); box-shadow:0 14px 34px -10px rgba(0,0,0,.45); }
+.ev-btn-cream .ev-pill-ic{ width:clamp(30px, 2.361vw, 38px); height:clamp(30px, 2.361vw, 38px);
+  background:#d9d6cf; color:#131627; }
+.ev-btn-cream::before{ content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+  box-shadow:0 0 0 0 rgba(243,239,230,.55); animation:evRing 2.8s ease-out 3s infinite; }
+@keyframes evRing{ 0%{ box-shadow:0 0 0 0 rgba(243,239,230,.5) } 70%,100%{ box-shadow:0 0 0 14px rgba(243,239,230,0) } }
+.ev-btn-cream:hover{ background:#fff; box-shadow:0 18px 44px -10px rgba(254,223,39,.45); }
+.ev-btn-cream:hover .ev-pill-ic{ background:#FEDF27; }
 
-/* cards */
-.ev-sp-list{ gap:10px; }
-.ev-sp-card{ padding:14px 20px; gap:16px; }
-.ev-sp-radio{ width:16px; height:16px; }
-.ev-sp-radio::after{ width:8px; height:8px; }
-.ev-sp-card-main{ gap:4px; }
-.ev-sp-card-title{ font-size:clamp(18px,1.5vw,22px); }
-.ev-sp-badge{ font-size:8px; padding:3px 8px; }
-.ev-sp-card-desc{ font-size:clamp(11px,.8vw,12.5px); line-height:1.45; }
-.ev-sp-card-price{ font-size:clamp(22px,2vw,30px); }
-@media (max-width:520px){
-  .ev-sp-card{ padding:12px 12px; gap:12px; }
-}
-
-/* form */
-.ev-sp-form{ padding:clamp(20px,2.2vw,32px); }
-.ev-sp-form-h{ font-size:clamp(24px,2vw,30px); }
-.ev-sp-form-p{ font-size:12px; margin-top:10px; margin-bottom:4px; }
-.ev-sp-label{ margin-top:14px; margin-bottom:6px; font-size:9px; }
-.ev-sp-input{ height:46px; padding:0 14px; font-size:13px; }
-.ev-sp-select{ padding-right:38px; margin-bottom:20px; background-position:right 14px center; }
-.ev-sp-submit{
-  justify-content:center; gap:12px;
-  height:48px; min-height:48px; padding:0 24px; border-radius:999px;
-  background:linear-gradient(90deg,#9C7222 0%,#F6DD8E 35%,#D9A93F 60%,#F6DD8E 100%);
-  font-size:11px; font-weight:700; letter-spacing:.18em; white-space:nowrap;
-  box-shadow:0 12px 32px -12px rgba(217,169,63,.65);
-}
-.ev-sp-submit:hover{ box-shadow:0 16px 38px -10px rgba(217,169,63,.8); }
-.ev-sp-fine{ font-size:10px; margin-top:12px; }
-
-/* popup */
-.ev-sp-pop{ max-width:440px; padding:clamp(22px,3vw,32px); }
-.ev-sp-check{ width:46px; height:46px; }
-.ev-sp-pop-h{ margin-top:18px; font-size:clamp(28px,3.4vw,36px); }
-.ev-sp-pop-p{ margin-top:12px; font-size:14px; line-height:1.65; }
-.ev-sp-pop-next{ margin-top:14px; font-size:13px; }
-
-/* ===== SECTION 5 (The right room): sabhi screens ===== */
-
-/* chhota laptop: heading ek hi line mein hoti hai, isliye thoda chhota taaki kate nahi */
-@media (min-width:1024px) and (max-width:1279px){
-  .ev-right-h{ font-size:8.4vw; }
-}
+/* load sequence */
+.ev-hero .ev-in{ opacity:0; transform:translateY(22px); filter:blur(8px); animation:evIn 1s var(--ease) forwards; }
+.ev-hero .ev-drop{ opacity:0; transform:translateY(-18px) scale(.96); filter:blur(6px); animation:evIn 1s var(--ease) forwards; }
+@keyframes evIn{ to{ opacity:1; transform:none; filter:none; } }
+.ev-hero .ev-w{ display:inline-block; opacity:0; transform:translateY(.35em) rotate(1.5deg); filter:blur(14px);
+  animation:evIn 1.1s var(--ease) forwards; }
+.ev-facts .ev-fact{ opacity:0; transform:translateY(12px); animation:evIn .9s var(--ease) forwards; }
 
 /* tablet */
-@media (min-width:600px) and (max-width:1023px){
-  .ev-scene-stick.ev-right{ padding-top:88px; padding-bottom:88px; }
+@media (max-width:1023px){
+  .ev-hero{ min-height:max(620px, min(calc(100svh - 72px), 80vw)); }
+  .ev-facts{ min-width:0; width:min(680px,100%); }
 }
-
 /* phone */
-@media (max-width:599px){
-  .ev-scene-stick.ev-right{ padding-top:64px; padding-bottom:64px; }
-  .ev-right-sub{ flex-direction:column; gap:6px; font-size:clamp(20px,6vw,26px); }
-  .ev-right-star{ display:none; }
-  .ev-right-eyebrow{ font-size:11px; letter-spacing:.2em; padding:0 8px; }
+@media (max-width:767px){
+  .ev-hero{ min-height:calc(100svh - 72px); }
+  .ev-hero-img{ object-position:58% 30%; }
+  .ev-hero-h{ font-size:clamp(28px, 9.4vw, 46px); letter-spacing:.6px; }
+  .ev-eyebrow-box{ font-size:clamp(10px, 3vw, 13px); letter-spacing:1.4px; }
+  .ev-facts{ grid-template-columns:1fr; width:100%; }
+  .ev-fact b{ white-space:normal; line-height:1.25; }
+  .ev-hero-foot{ grid-template-columns:1fr; justify-items:center; text-align:center; }
+  .ev-hero-foot .l,.ev-hero-foot .r{ display:none; }
+}
+@media (max-width:359px){
+  .ev-hero-h{ font-size:26px; }
+  .ev-hero-h .ev-line{ white-space:normal; }
 }
 
-/* badi screens (1600px+): button bhi baaki section ki tarah scale ho */
-@media (min-width:1600px){
-  .ev-right .ev-btn-gold{
-    width:calc(230px * var(--ev-k)); height:calc(48px * var(--ev-k));
-    font-size:calc(11px * var(--ev-k)); gap:calc(12px * var(--ev-k));
-  }
+/* =========================== 2. ROOM =========================== */
+/* Figma frame 1440 x 802. Values vw me scale hote hain (1px @1440 = 0.0694vw). */
+.ev-cream{ background:var(--cream); }
+.ev-room{ --rg:#D69E1E; --rgt:#C8961B; background:#F1EDE5;
+  padding:clamp(56px, 5.6vw, 110px) 0 clamp(56px, 3.75vw, 80px); overflow:hidden; }
+
+/* animation base: .rm-a item "is-in" parent ke andar aate hi dikhte hain, delay = --d */
+.ev-room .rm-a{ opacity:0; transform:translateY(26px); filter:blur(10px);
+  transition:opacity .95s var(--ease), transform .95s var(--ease), filter .95s var(--ease); transition-delay:var(--d,0s); }
+.ev-room .is-in .rm-a, .ev-room .is-in.rm-a{ opacity:1; transform:none; filter:none; }
+
+/* ---- title row: line + HOUSTON | heading | LIMITED + line ---- */
+.rm-head{ display:grid; grid-template-columns:1fr auto 1fr; align-items:stretch;
+  padding-left:clamp(16px, 3.333vw, 64px); }
+.rm-side{ display:flex; align-items:center; min-width:0; }
+.rm-side.l{ align-self:end; padding-bottom:clamp(14px, 1.7vw, 34px); gap:clamp(8px, 1.04vw, 20px); padding-right:clamp(14px, 2.64vw, 50px); }
+.rm-side.r{ align-self:center; margin-top:clamp(10px, 1.1vw, 22px); gap:clamp(6px, .694vw, 14px); padding-left:clamp(4px, .42vw, 8px); }
+.rm-line{ flex:1; height:1px; background:#8F8F8F; transform:scaleX(0);
+  transition:transform 1.5s var(--ease); transition-delay:var(--d,0s); }
+.rm-side.l .rm-line{ transform-origin:left center; }
+.rm-side.r .rm-line{ transform-origin:right center; }
+.is-in .rm-line{ transform:scaleX(1); }
+.rm-pill{ flex:none; font-family:var(--sans); font-size:clamp(9px, .833vw, 15px); font-weight:500; letter-spacing:.14em; text-transform:uppercase;
+  color:#1B1D29; border:1px solid #8F8F8F; border-radius:999px; line-height:1;
+  padding:clamp(6px, .555vw, 10px) clamp(10px, 1.04vw, 18px); background:#F1EDE5;
+  opacity:0; transform:scale(.6); transition:opacity .6s var(--ease), transform .8s cubic-bezier(.3,1.6,.4,1), background .3s, color .3s;
+  transition-delay:var(--d,0s); }
+.is-in .rm-pill{ opacity:1; transform:none; }
+.rm-pill:hover{ background:#1B1D29; color:#F1EDE5; }
+
+.rm-h{ margin:0; text-align:center; line-height:1; }
+/* Figma: Libre Bodoni 400, 62px, line-height 100%, letter-spacing 2.6px, center */
+.rm-h .a{ display:block; font-family:'Libre Bodoni','Instrument Serif',Georgia,serif; font-weight:400; font-style:normal;
+  text-transform:uppercase; text-align:center; font-size:clamp(28px, 4.306vw, 82px); line-height:1;
+  letter-spacing:clamp(1px, .181vw, 3.4px); color:#161A2B; }
+.rm-h .b{ display:block; margin-top:clamp(6px, .9vw, 16px); font-family:var(--sans); font-weight:700; text-transform:uppercase;
+  font-size:clamp(28px, 4.31vw, 82px); line-height:1; letter-spacing:.045em; color:var(--rg); }
+/* words / letters: bade + blur se apni jagah pe aate hain (video jaisa) */
+.rm-h .w, .rm-h .c{ display:inline-block; opacity:0; filter:blur(14px); transform:translateY(.18em) scale(1.18);
+  transition:opacity 1s var(--ease), filter 1s var(--ease), transform 1.1s var(--ease); transition-delay:var(--d,0s); }
+.rm-h .c{ transform:translateY(.45em) scale(1); filter:blur(8px); transition-duration:.8s; }
+.is-in .rm-h .w, .is-in .rm-h .c{ opacity:1; filter:none; transform:none; }
+
+/* ---- 3 column body ---- */
+.rm-grid{ width:var(--cw); max-width:none; margin:clamp(40px, 4.31vw, 86px) auto 0;
+  padding:0; box-sizing:border-box;
+  display:grid; grid-template-columns:minmax(0,408fr) minmax(0,384fr) minmax(0,408fr);
+  grid-template-rows:1fr auto; grid-template-areas:"lt img rt" "lb img rb"; column-gap:0; }
+.rm-lt{ grid-area:lt; padding-top:clamp(12px, 1.39vw, 28px); padding-right:clamp(24px, 3.5vw, 70px); }
+.rm-lb{ grid-area:lb; padding-bottom:clamp(30px, 3.1vw, 60px); padding-right:16px; }
+.rm-rt{ grid-area:rt; padding-top:clamp(14px, 1.25vw, 26px); padding-left:clamp(40px, 5.42vw, 104px); }
+.rm-rb{ grid-area:rb; padding-bottom:clamp(14px, 1.39vw, 28px); padding-left:clamp(40px, 5.42vw, 104px); }
+
+.rm-lt h3{ margin:0; font-family:var(--sans); font-weight:500; color:#141621; font-size:clamp(18px, 1.39vw, 27px); line-height:1.25; }
+/* Figma: Onest 400, 13.5px, line-height 21px, #6E7180 */
+.rm-lt p{ margin:clamp(10px, 1.04vw, 18px) 0 0; font-family:'Onest',system-ui,sans-serif; font-weight:400; color:#6E7180;
+  max-width:23.5em; font-size:clamp(13px, .9375vw, 17px); line-height:1.5556; letter-spacing:0; }
+.rm-btn{ display:inline-flex; align-items:center; margin-top:clamp(28px, 3.3vw, 60px); height:clamp(34px, 2.36vw, 44px);
+  padding:0 clamp(16px, 1.25vw, 24px); border-radius:999px; background:#111216; color:#fff; text-decoration:none;
+  font-family:var(--sans); font-weight:500; font-size:clamp(12px, .903vw, 16px); letter-spacing:.01em; position:relative; overflow:hidden; }
+.rm-btn::before{ content:""; position:absolute; inset:0; background:var(--rg); transform:translateY(101%);
+  transition:transform .45s var(--ease); border-radius:inherit; }
+.rm-btn span{ position:relative; transition:color .3s; }
+.rm-btn:hover::before{ transform:none; }
+.rm-btn:hover span{ color:#111216; }
+
+.rm-label{ margin:0; font-family:var(--sans); font-weight:500; color:#141621; font-size:clamp(13px, .972vw, 18px); }
+.rm-dots{ display:flex; flex-wrap:wrap; gap:6px clamp(12px, 1.11vw, 20px); margin-top:clamp(12px, 1.25vw, 22px); }
+.rm-dots span{ display:inline-flex; align-items:center; gap:7px; font-family:var(--sans); color:var(--rgt);
+  font-size:clamp(11.5px, .868vw, 16px); }
+.rm-dots span::before{ content:""; width:clamp(7px, .555vw, 10px); height:clamp(7px, .555vw, 10px); border-radius:50%; background:var(--rg);
+  transform:scale(0); transition:transform .6s cubic-bezier(.3,1.8,.4,1); transition-delay:calc(var(--d,0s) + .15s); }
+.is-in .rm-dots span::before{ transform:none; }
+
+/* ---- photo ---- */
+.rm-img{ grid-area:img; position:relative; border-radius:clamp(10px, .833vw, 16px); overflow:hidden; aspect-ratio:384/456;
+  background:#e3ddd2; box-shadow:0 40px 70px -40px rgba(22,26,43,.5);
+  clip-path:inset(10% 8% 10% 8% round 14px); opacity:.35; filter:saturate(0) brightness(1.25);
+  transition:clip-path 1.5s var(--ease), opacity 1.1s var(--ease), filter 1.6s var(--ease); transition-delay:.15s; }
+.rm-grid.is-in .rm-img{ clip-path:inset(0 0 0 0 round clamp(10px, .833vw, 16px)); opacity:1; filter:none; }
+.rm-img img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+  transform:translate3d(0, var(--py,0px), 0) scale(1.14); transition:transform 1.2s var(--ease); }
+.rm-img:hover img{ transform:translate3d(0, var(--py,0px), 0) scale(1.2); }
+
+/* ---- right points ---- */
+.rm-pt h4{ margin:0; font-family:var(--sans); font-weight:500; color:var(--rgt); font-size:clamp(15px, 1.11vw, 21px); line-height:1.3; }
+.rm-pt p{ margin:clamp(5px, .42vw, 8px) 0 0; font-family:var(--sans); color:#6F7280; font-size:clamp(12px, .868vw, 16px); line-height:1.5; max-width:26em; }
+.rm-sep{ height:1px; margin:clamp(16px, 1.39vw, 26px) 0; background:rgba(214,158,30,.28);
+  transform:scaleX(0); transform-origin:left; transition:transform 1.2s var(--ease); transition-delay:var(--d,0s); }
+.is-in .rm-sep{ transform:scaleX(1); }
+
+.rm-hosts{ display:flex; align-items:center; gap:clamp(6px, .555vw, 10px); margin-top:clamp(10px, 1.1vw, 20px); }
+.rm-avs{ display:flex; }
+.rm-avs img{ width:clamp(32px, 2.5vw, 46px); height:clamp(32px, 2.5vw, 46px); border-radius:50%; object-fit:cover;
+  border:2px solid #fff; margin-left:calc(-1 * clamp(9px, .69vw, 13px)); background:#ddd;
+  opacity:0; transform:scale(.3) translateX(-10px);
+  transition:opacity .5s var(--ease), transform .7s cubic-bezier(.3,1.6,.4,1); transition-delay:var(--d,0s); }
+.rm-avs img:first-child{ margin-left:0; }
+.is-in .rm-avs img{ opacity:1; transform:none; }
+.rm-avs:hover img{ transform:translateX(calc(var(--i) * 4px)); transition-delay:0s; }
+.rm-hosts b{ display:block; font-family:var(--sans); font-weight:500; color:#141621; font-size:clamp(13px, .972vw, 18px); line-height:1.2; }
+.rm-hosts small{ display:block; font-family:var(--sans); color:#6F7280; font-size:clamp(11px, .8vw, 14px); }
+
+/* ---- tablet ---- */
+@media (max-width:1023px){
+  .rm-grid{ width:auto; padding:0 32px; box-sizing:content-box; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto auto auto;
+    grid-template-areas:"img lt" "img rt" "lb rb"; column-gap:clamp(28px,4vw,48px); max-width:860px; }
+  .rm-lt,.rm-rt,.rm-lb,.rm-rb{ padding-left:0; padding-right:0; }
+  .rm-lt{ padding-top:0; }
+  .rm-rt{ padding-top:28px; }
+  .rm-lb,.rm-rb{ padding-top:36px; padding-bottom:0; }
+  .rm-btn{ margin-top:24px; }
+}
+/* ---- phone ---- */
+@media (max-width:640px){
+  .rm-head{ grid-template-columns:1fr; padding:0 20px; }
+  .rm-side{ display:none; }
+  .rm-tags{ display:flex !important; justify-content:center; gap:10px; margin-top:18px; }
+  .rm-h .a{ font-size:clamp(26px, 8.2vw, 40px); letter-spacing:1.2px; }
+  .rm-h .b{ font-size:clamp(26px, 8.4vw, 40px); letter-spacing:.03em; }
+  .rm-grid{ grid-template-columns:1fr; grid-template-areas:"lt" "img" "rt" "lb" "rb"; max-width:520px; padding:0 20px; }
+  .rm-img{ margin-top:32px; aspect-ratio:4/4.4; }
+  .rm-rt{ padding-top:32px; }
+  .rm-lb{ padding-top:32px; }
+  .rm-rb{ padding-top:24px; }
+}
+.rm-tags{ display:none; }
+
+/* =========================== 3. PEOPLE =========================== */
+/* Figma frame 1440 x 560: photos 4 x (196 x 250), gap 16 | 62 | text column. */
+.ev-dark{ background:var(--navy); color:#fff; }
+.pp{ background:#0E0F14; color:#fff; padding:clamp(64px, 9.5vw, 170px) 0 clamp(64px, 9.65vw, 172px); overflow:hidden; }
+.pp-wrap{ width:var(--cw); margin:0 auto; display:grid;
+  grid-template-columns:minmax(0,800fr) minmax(0,372fr); column-gap:clamp(32px, 4.306vw, 62px); align-items:start; }
+
+/* photos */
+.pp-faces{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:clamp(10px, 1.111vw, 20px); }
+.pp-face{ margin:0; cursor:default; }
+.pp-ph{ position:relative; overflow:hidden; aspect-ratio:196/250; border-radius:clamp(10px, .833vw, 16px); background:#1b1d25;
+  clip-path:inset(100% 0 0 0 round clamp(10px, .833vw, 16px)); transform:translateY(40px);
+  transition:clip-path 1.2s var(--ease), transform 1.2s var(--ease); transition-delay:var(--d,0s); }
+.pp-ph img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+  transform:scale(1.25); transition:transform 1.6s var(--ease); transition-delay:var(--d,0s); }
+.pp-ph::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(254,223,39,0); transition:box-shadow .45s;
+  background:linear-gradient(180deg, transparent 60%, rgba(14,15,20,.35)); opacity:0; }
+.pp.is-in .pp-ph{ clip-path:inset(0 0 0 0 round clamp(10px, .833vw, 16px)); transform:none; }
+.pp.is-in .pp-ph img{ transform:scale(1); }
+.pp-face figcaption{ margin-top:clamp(14px, 1.39vw, 26px); padding-left:2px; font-family:var(--sans); font-weight:400;
+  font-size:clamp(12px, .903vw, 17px); line-height:1.2; color:#fff; position:relative; display:inline-block;
+  opacity:0; transform:translateY(10px); transition:opacity .8s var(--ease), transform .8s var(--ease), color .3s;
+  transition-delay:calc(var(--d,0s) + .45s); }
+.pp-face figcaption::after{ content:""; position:absolute; left:2px; right:0; bottom:-5px; height:1px; background:#FEDF27;
+  transform:scaleX(0); transform-origin:left; transition:transform .45s var(--ease); }
+.pp.is-in .pp-face figcaption{ opacity:1; transform:none; }
+/* hover */
+.pp-face:hover .pp-ph img{ transform:scale(1.07); transition-delay:0s; transition-duration:.9s; }
+.pp-face:hover .pp-ph::after{ opacity:1; box-shadow:inset 0 0 0 1px rgba(254,223,39,.65); }
+.pp-face:hover figcaption{ color:#FEDF27; transition-delay:0s; }
+.pp-face:hover figcaption::after{ transform:scaleX(1); }
+
+/* text column */
+.pp-copy{ padding-top:2px; }
+.pp-h{ margin:0; font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:max(40px, calc(var(--cw) * 56 / 1216));
+  line-height:.87; letter-spacing:-.005em; color:#fff; }
+.pp-h > span{ display:block; white-space:nowrap; }
+.pp-h .g{ color:#FEDF27; }
+.pp-p{ margin:clamp(28px, 2.92vw, 52px) 0 0; max-width:23.5em; font-family:var(--sans); font-weight:400;
+  font-size:clamp(13px, .9375vw, 17px); line-height:1.5556; color:#B8B9BD; }
+.pp-btn{ display:inline-flex; align-items:center; justify-content:center; margin-top:clamp(22px, 2.01vw, 36px);
+  height:clamp(34px, 2.43vw, 44px); padding:0 clamp(17px, 1.25vw, 24px); border-radius:999px; background:#fff; color:#0E0F14;
+  font-family:var(--sans); font-weight:500; font-size:clamp(12px, .868vw, 16px); text-decoration:none; position:relative; overflow:hidden;
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease); }
+.pp-btn::before{ content:""; position:absolute; inset:0; background:#FEDF27; transform:translateY(101%);
+  transition:transform .45s var(--ease); border-radius:inherit; }
+.pp-btn span{ position:relative; }
+.pp.is-in .pp-btn:hover{ transform:translateY(-2px); box-shadow:0 12px 30px -10px rgba(254,223,39,.5); }
+.pp-btn:hover::before{ transform:none; }
+.pp .rm-a{ opacity:0; transform:translateY(22px); filter:blur(8px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay:var(--d,0s); }
+.pp.is-in .rm-a{ opacity:1; transform:none; filter:none; }
+.pp-h .w{ display:inline-block; opacity:0; filter:blur(12px); transform:translateY(.25em);
+  transition:opacity 1s var(--ease), filter 1s var(--ease), transform 1s var(--ease); transition-delay:var(--d,0s); }
+.pp.is-in .pp-h .w{ opacity:1; filter:none; transform:none; }
+
+/* tablet: text upar, photos niche */
+@media (max-width:1023px){
+  .pp-wrap{ grid-template-columns:1fr; width:auto; padding:0 32px; max-width:860px; }
+  .pp-copy{ order:-1; display:grid; grid-template-columns:auto 1fr; column-gap:40px; align-items:end; }
+  .pp-h{ font-size:clamp(40px, 6.4vw, 60px); }
+  .pp-p{ margin-top:0; }
+  .pp-btn{ grid-column:2; justify-self:start; }
+  .pp-faces{ margin-top:clamp(36px, 5vw, 56px); }
+}
+/* phone: 2 x 2 photos */
+@media (max-width:640px){
+  .pp-copy{ display:block; }
+  .pp-h{ font-size:clamp(38px, 11vw, 52px); }
+  .pp-p{ margin-top:22px; }
+  .pp-faces{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px 12px; margin-top:36px; }
+}
+
+/* =========================== 4. RIGHT ROOM =========================== */
+/* Figma frame 1440 x 747. --u = 1 Figma px (1440 pe), screen ke saath scale hota hai,
+   isliye text aur photos ki jagah har desktop size pe same rehti hai. */
+.ev-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.32em; color:var(--mustard); text-transform:uppercase; }
+.rr{ --u:calc(var(--cw) / 1320); position:relative; overflow:hidden; background:#F2EEE5; color:#131627;
+  padding:calc(94 * var(--u)) 0 calc(70 * var(--u)); text-align:center; }
+.rr-in{ position:relative; z-index:2; }
+.rr-eye{ margin:0; font-family:var(--sans); font-weight:600; font-size:max(11px, calc(13 * var(--u))); line-height:1;
+  letter-spacing:.27em; text-transform:uppercase; color:#AD970E; }
+.rr-h{ margin:calc(30 * var(--u)) 0 0; line-height:1; }
+.rr-h .a{ display:block; font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:calc(62 * var(--u));
+  line-height:1; letter-spacing:0; color:#131627; white-space:nowrap; }
+.rr-h .b{ display:block; margin-top:calc(18 * var(--u)); font-family:var(--sans); font-weight:600; font-size:calc(64 * var(--u));
+  line-height:1; letter-spacing:.005em; text-transform:uppercase; color:#D39A1B; white-space:nowrap; }
+
+/* staircase lines: 1440 wide box, har line ka left Figma jaisa */
+.rr-lines{ list-style:none; padding:0; width:calc(1440 * var(--u)); margin:calc(66 * var(--u)) 0 0 calc(50% - 720 * var(--u)); text-align:left; }
+.rr-lines li{ display:flex; align-items:center; gap:calc(23 * var(--u)); font-family:'Instrument Serif',Georgia,serif;
+  font-size:calc(46 * var(--u)); line-height:1; color:#131627; white-space:nowrap; }
+.rr-lines li:nth-child(1){ padding-left:calc(322 * var(--u)); }
+.rr-lines li:nth-child(2){ padding-left:calc(577 * var(--u)); margin-top:calc(54 * var(--u)); }
+.rr-lines li:nth-child(3){ padding-left:calc(927 * var(--u)); margin-top:calc(40 * var(--u)); }
+.rr-star{ flex:none; width:calc(23 * var(--u)); height:calc(23 * var(--u)); color:#E4C300; }
+.rr-foot{ margin-top:calc(52 * var(--u)); }
+.rr-foot i{ display:block; width:calc(260 * var(--u)); height:1px; margin:0 auto;
+  background:linear-gradient(90deg, rgba(228,195,1,0), #E4C301 50%, rgba(228,195,1,0)); }
+.rr-foot p{ margin:calc(26 * var(--u)) 0 0; font-family:var(--sans); font-weight:400; font-size:max(15px, calc(19 * var(--u)));
+  line-height:1.2; color:#3A3D4F; }
+
+/* floating photos: center se Figma jaisi doori pe */
+.rr-ph{ position:absolute; z-index:1; overflow:hidden; background:#e3ddd2;
+  box-shadow:0 calc(22 * var(--u)) calc(40 * var(--u)) calc(-18 * var(--u)) rgba(19,22,39,.38); }
+.rr-ph img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; transition:transform .9s var(--ease); }
+.rr-ph:hover img{ transform:scale(1.08); }
+.rr-ph.p1{ left:calc(50% - 600 * var(--u)); top:calc(76 * var(--u)); width:calc(132 * var(--u)); height:calc(121 * var(--u)); }
+.rr-ph.p2{ left:calc(50% + 482 * var(--u)); top:calc(119 * var(--u)); width:calc(171 * var(--u)); height:calc(171 * var(--u)); }
+.rr-ph.p3{ left:calc(50% - 646 * var(--u)); top:calc(450 * var(--u)); width:calc(171 * var(--u)); height:calc(171 * var(--u)); }
+.rr-ph.p4{ left:calc(50% + 521 * var(--u)); top:calc(574 * var(--u)); width:calc(132 * var(--u)); height:calc(121 * var(--u)); }
+.rr-ph{ translate:0 var(--py,0px); }
+.rr-ph-in{ position:absolute; inset:0; animation:rrBob 7s ease-in-out infinite; }
+.rr-ph.p2 .rr-ph-in{ animation-delay:-2.2s; } .rr-ph.p3 .rr-ph-in{ animation-delay:-4.1s; } .rr-ph.p4 .rr-ph-in{ animation-delay:-1.3s; }
+@keyframes rrBob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(calc(-9 * var(--u))) } }
+.rr-tiles{ display:none; }
+
+/* animations (section screen pe aate hi) */
+.rr .an{ opacity:0; transform:translateY(calc(24 * var(--u))); filter:blur(8px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay:var(--d,0s); }
+.rr.is-in .an{ opacity:1; transform:none; filter:none; }
+.rr-eye.an{ letter-spacing:.6em; transition-property:opacity, transform, filter, letter-spacing; }
+.rr.is-in .rr-eye.an{ letter-spacing:.27em; }
+.rr .w{ display:inline-block; opacity:0; filter:blur(12px); transform:translateY(.3em) scale(1.08);
+  transition:opacity 1s var(--ease), filter 1s var(--ease), transform 1.1s var(--ease); transition-delay:var(--d,0s); }
+.rr.is-in .w{ opacity:1; filter:none; transform:none; }
+.rr-lines li{ opacity:0; transform:translateX(calc(-40 * var(--u))); filter:blur(8px);
+  transition:opacity 1s var(--ease), transform 1.1s var(--ease), filter 1s var(--ease); transition-delay:var(--d,0s); }
+.rr.is-in .rr-lines li{ opacity:1; transform:none; filter:none; }
+.rr-lines li .rr-star{ transform:scale(0) rotate(-120deg); transition:transform 1s cubic-bezier(.3,1.6,.4,1); transition-delay:calc(var(--d,0s) + .2s); }
+.rr.is-in .rr-lines li .rr-star{ transform:none; animation:rrTwinkle 3.8s ease-in-out calc(var(--d,0s) + 1.4s) infinite; }
+@keyframes rrTwinkle{ 0%,100%{ transform:scale(1) rotate(0) } 50%{ transform:scale(.75) rotate(45deg) } }
+.rr-foot i{ transform:scaleX(0); transition:transform 1.4s var(--ease); transition-delay:var(--d,0s); }
+.rr.is-in .rr-foot i{ transform:scaleX(1); }
+.rr-ph{ clip-path:inset(50% 50% 50% 50%); opacity:0;
+  transition:clip-path 1.3s var(--ease), opacity .6s var(--ease); transition-delay:var(--d,0s); }
+.rr.is-in .rr-ph{ clip-path:inset(0 0 0 0); opacity:1; }
+
+/* tablet */
+@media (max-width:1023px){
+  .rr{ --u:.72px; padding:96px 0 72px; }
+  .rr-eye{ font-size:12px; }
+  .rr-h .a{ font-size:clamp(44px, 6vw, 56px); }
+  .rr-h .b{ font-size:clamp(30px, 5.2vw, 48px); white-space:normal; padding:0 24px; }
+  .rr-lines{ width:min(640px, calc(100% - 64px)); margin:56px auto 0; }
+  .rr-lines li{ font-size:clamp(32px, 4.6vw, 42px); gap:16px; }
+  .rr-lines li:nth-child(1){ padding-left:0; }
+  .rr-lines li:nth-child(2){ padding-left:24%; margin-top:34px; }
+  .rr-lines li:nth-child(3){ padding-left:52%; margin-top:30px; }
+  .rr-star{ width:20px; height:20px; }
+  .rr-foot{ margin-top:46px; }
+  .rr-foot i{ width:220px; }
+  .rr-foot p{ font-size:17px; margin-top:20px; }
+  .rr-ph.p1{ left:3%; top:24px; width:96px; height:88px; }
+  .rr-ph.p2{ left:auto; right:3%; top:40px; width:110px; height:110px; }
+  .rr-ph.p3{ left:3%; top:auto; bottom:120px; width:110px; height:110px; }
+  .rr-ph.p4{ left:auto; right:3%; top:auto; bottom:40px; width:96px; height:88px; }
+}
+/* phone: floating photos hata ke niche 4 tiles */
+@media (max-width:640px){
+  .rr{ padding:72px 0 64px; }
+  .rr-h .a{ font-size:clamp(38px, 11vw, 46px); }
+  .rr-h .b{ font-size:clamp(26px, 7.6vw, 34px); padding:0 20px; }
+  .rr-lines{ width:calc(100% - 40px); margin-left:auto; margin-right:auto; }
+  .rr-lines li{ font-size:clamp(26px, 8vw, 34px); gap:12px; }
+  .rr-lines li:nth-child(2){ padding-left:10%; margin-top:22px; }
+  .rr-lines li:nth-child(3){ padding-left:22%; margin-top:22px; }
+  .rr-star{ width:16px; height:16px; }
+  .rr-ph{ display:none; }
+  .rr-tiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:36px 20px 0; }
+  .rr-tiles img{ width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .rr-foot p{ font-size:16px; padding:0 20px; }
+}
+
+/* =========================== 5. REASONS =========================== */
+/* Figma frame 1440 x 685: 4 cards 318 x 330, gap 24. */
+.rs{ --u:calc(var(--cw) / 1320); background:#0E0F14; color:#fff; overflow:hidden;
+  padding:calc(80 * var(--u)) 0 calc(90 * var(--u)); text-align:center; }
+.rs-h{ margin:0; line-height:1; white-space:nowrap; }
+.rs-h .a{ font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:calc(64 * var(--u)); letter-spacing:-.005em; color:#fff; }
+.rs-h .b{ font-family:var(--sans); font-weight:700; font-size:calc(60 * var(--u)); letter-spacing:-.005em; color:#FEDF27; }
+.rs-h .grp{ white-space:nowrap; }
+.rs-line{ display:block; width:calc(840 * var(--u)); max-width:90%; height:1px; margin:calc(24 * var(--u)) auto 0;
+  background:linear-gradient(90deg, rgba(228,195,1,0), #E4C301 50%, rgba(228,195,1,0)); }
+.rs-sub{ margin:calc(36 * var(--u)) 0 0; font-family:var(--sans); font-weight:400; font-size:max(14px, calc(17 * var(--u))); line-height:1.2; color:#C9CCDA; }
+.rs-grid{ width:calc(1320 * var(--u)); margin:calc(44 * var(--u)) auto 0; display:grid;
+  grid-template-columns:repeat(4, minmax(0,1fr)); gap:calc(24 * var(--u)); text-align:left; }
+.rs-card{ position:relative; overflow:hidden; min-height:calc(330 * var(--u)); border-radius:calc(8 * var(--u));
+  padding:calc(28 * var(--u)) calc(28 * var(--u)) calc(32 * var(--u)); color:#131627;
+  background:linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 22%, #FFF6E6 55%, #FFE7BB 100%);
+  display:flex; flex-direction:column;
+  transition:transform .6s var(--ease), box-shadow .6s var(--ease); }
+.rs-card::after{ content:""; position:absolute; top:0; bottom:0; left:-60%; width:45%; pointer-events:none;
+  background:linear-gradient(105deg, transparent, rgba(255,255,255,.75), transparent); transform:skewX(-12deg); transition:left .9s var(--ease); }
+.rs-card:hover{ transform:translateY(calc(-10 * var(--u))); box-shadow:0 calc(30 * var(--u)) calc(60 * var(--u)) calc(-24 * var(--u)) rgba(254,223,39,.45); }
+.rs-card:hover::after{ left:120%; }
+.rs-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+.rs-ic{ display:grid; place-items:center; width:calc(72 * var(--u)); height:calc(72 * var(--u)); border-radius:calc(12 * var(--u));
+  background:#131627; color:#D9B60F; transition:transform .6s cubic-bezier(.3,1.5,.4,1), color .3s; }
+.rs-ic svg{ width:calc(32 * var(--u)); height:calc(32 * var(--u)); }
+.rs-card:hover .rs-ic{ transform:rotate(-8deg) scale(1.06); color:#FEDF27; }
+.rs-n{ font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:calc(58 * var(--u)); line-height:1;
+  margin-top:calc(2 * var(--u)); margin-right:calc(2 * var(--u)); color:#131627; }
+.rs-div{ height:1px; margin-top:calc(50 * var(--u)); background:#DCD4C9; transform-origin:left; }
+.rs-card h3{ margin:calc(26 * var(--u)) 0 0; font-family:var(--sans); font-weight:600; font-size:max(17px, calc(24 * var(--u)));
+  line-height:1.15; color:#131627; }
+.rs-card p{ margin:calc(22 * var(--u)) 0 0; font-family:var(--sans); font-weight:400; font-size:max(13px, calc(16 * var(--u)));
+  line-height:1.5625; color:#23263A; }
+
+/* animations */
+.rs .w{ display:inline-block; opacity:0; filter:blur(12px); transform:translateY(.3em);
+  transition:opacity 1s var(--ease), filter 1s var(--ease), transform 1s var(--ease); transition-delay:var(--d,0s); }
+.rs.is-in .w{ opacity:1; filter:none; transform:none; }
+.rs-line{ transform:scaleX(0); transition:transform 1.4s var(--ease); transition-delay:var(--d,0s); }
+.rs.is-in .rs-line{ transform:scaleX(1); }
+.rs .an{ opacity:0; transform:translateY(calc(20 * var(--u))); filter:blur(6px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay:var(--d,0s); }
+.rs.is-in .an{ opacity:1; transform:none; filter:none; }
+.rs-card.an{ transform:translateY(calc(60 * var(--u))) scale(.96); filter:blur(4px);
+  transition:opacity 1s var(--ease), transform 1.1s var(--ease), filter 1s var(--ease), box-shadow .6s var(--ease);
+  transition-delay:var(--d,0s), var(--d,0s), var(--d,0s), 0s; }
+.rs.is-in .rs-card.an{ transform:none; }
+.rs.is-in .rs-card.an:hover{ transform:translateY(calc(-10 * var(--u))); transition-delay:0s; }
+.rs-ic{ scale:.4; opacity:0; transition:scale .8s cubic-bezier(.3,1.6,.4,1), opacity .5s, transform .6s cubic-bezier(.3,1.5,.4,1), color .3s;
+  transition-delay:calc(var(--d,0s) + .35s), calc(var(--d,0s) + .35s), 0s, 0s; }
+.rs.is-in .rs-ic{ scale:1; opacity:1; }
+.rs-n{ opacity:0; translate:calc(16 * var(--u)) 0; transition:opacity .8s var(--ease), translate .8s var(--ease);
+  transition-delay:calc(var(--d,0s) + .45s); }
+.rs.is-in .rs-n{ opacity:1; translate:0 0; }
+.rs-div{ transform:scaleX(0); transition:transform 1s var(--ease); transition-delay:calc(var(--d,0s) + .5s); }
+.rs.is-in .rs-div{ transform:scaleX(1); }
+
+/* tablet: 2 x 2 */
+@media (max-width:1023px){
+  .rs{ --u:.92px; padding:88px 0 88px; }
+  .rs-h{ white-space:normal; padding:0 32px; }
+  .rs-h .a{ font-size:clamp(40px, 6vw, 56px); }
+  .rs-h .b{ font-size:clamp(38px, 5.6vw, 52px); }
+  .rs-grid{ width:auto; max-width:760px; margin-left:auto; margin-right:auto; padding:0 32px; grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .rs-card{ min-height:0; }
+}
+/* phone: 1 column */
+@media (max-width:640px){
+  .rs{ --u:.9px; padding:72px 0; }
+  .rs-h .a{ font-size:clamp(34px, 10vw, 44px); }
+  .rs-h .b{ font-size:clamp(32px, 9.4vw, 42px); }
+  .rs-h .grp{ display:inline-block; }
+  .rs-grid{ grid-template-columns:1fr; padding:0 20px; gap:16px; }
+  .rs-div{ margin-top:32px; }
+}
+
+/* =========================== 6. EVENING =========================== */
+/* Figma frame 1440 x 900. 3 cards loop me ghoomte hain: left | center | right.
+   --u = 1 Figma px @1440. Center card saaf, side cards safed (washed). */
+.ev-white{ background:#fff; }
+.eh{ --u:calc(var(--cw) / 1320); background:#fff; color:#131627; overflow:hidden;
+  padding:calc(78 * var(--u)) 0 calc(56 * var(--u)); }
+.eh-box{ width:calc(1320 * var(--u)); margin:0 auto; }
+.eh-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:calc(40 * var(--u));
+  padding:0 calc(66 * var(--u)) 0 calc(64 * var(--u)); }
+.eh-h{ margin:0; }
+.eh-h .a{ display:block; font-family:var(--sans); font-weight:700; font-size:max(38px, calc(62 * var(--u))); line-height:1;
+  letter-spacing:-.02em; color:#131627; white-space:nowrap; }
+.eh-h .b{ display:block; margin-top:calc(-2 * var(--u)); font-family:'Instrument Serif',Georgia,serif; font-weight:400;
+  font-size:max(40px, calc(68 * var(--u))); line-height:1; color:#131627; white-space:nowrap; }
+.eh-p{ margin:calc(32 * var(--u)) 0 0; max-width:max(260px, calc(330 * var(--u))); font-family:var(--sans); font-weight:400;
+  font-size:max(13px, calc(14 * var(--u))); line-height:1.5; color:#6E7180; }
+
+.eh-strip{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 0;
+  margin-top:calc(34 * var(--u)); font-family:var(--sans); font-size:max(11px, calc(12 * var(--u))); line-height:1.2; color:#6E7180; }
+.eh-strip .it{ display:inline-flex; gap:.45em; padding:4px calc(10 * var(--u)); border-radius:999px; border:0; background:none;
+  font:inherit; color:inherit; white-space:nowrap; transition:background .35s, color .35s; }
+.eh-strip button.it{ cursor:pointer; }
+.eh-strip button.it:hover{ color:#131627; }
+.eh-strip .it.on{ color:#131627; font-weight:500; }
+.eh-strip .dot{ opacity:.6; }
+
+/* track + 3 slots */
+.eh-track{ position:relative; height:calc(452 * var(--u)); margin-top:calc(16 * var(--u)); perspective:1400px; }
+.ec{ position:absolute; top:0; left:0; width:calc(340 * var(--u)); cursor:pointer; transform-style:preserve-3d;
+  transition:left 1s var(--ease), top 1s var(--ease), width 1s var(--ease), transform 1s var(--ease), opacity .8s var(--ease); }
+.ec-im{ position:relative; overflow:hidden; height:calc(250 * var(--u)); border-radius:calc(16 * var(--u)); background:#eef0f4;
+  transition:height 1s var(--ease), box-shadow 1s var(--ease); }
+.ec-im img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; transform:scale(1.06);
+  transition:transform 1.4s var(--ease); }
+.ec-wash{ position:absolute; inset:0; background:#fff; opacity:.55; transition:opacity 1s var(--ease); pointer-events:none; }
+.ec h3{ margin:calc(20 * var(--u)) 0 0; font-family:var(--sans); font-weight:600; font-size:max(14px, calc(16 * var(--u)));
+  line-height:1.25; color:#B8BAC3; transition:color .8s, font-size 1s var(--ease), margin 1s var(--ease); }
+.ec p{ margin:calc(8 * var(--u)) 0 0; max-width:calc(300 * var(--u)); font-family:var(--sans); font-size:max(12px, calc(13 * var(--u)));
+  line-height:1.4; color:#D3D5DB; transition:color .8s, max-width 1s var(--ease); }
+.ec-bdg{ position:absolute; z-index:2; top:calc(16 * var(--u)); display:inline-flex; align-items:center; gap:6px; border-radius:999px;
+  font-family:var(--sans); font-size:max(10.5px, calc(12 * var(--u))); line-height:1; padding:calc(7 * var(--u)) calc(13 * var(--u));
+  transition:opacity .6s; }
+.ec-bdg.l{ left:calc(16 * var(--u)); background:#fff; color:#131627; font-weight:500; }
+.ec-bdg.r{ right:calc(16 * var(--u)); border:1px solid rgba(255,255,255,.85); color:#fff; background:rgba(10,12,28,.34);
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.ec-bdg.l svg{ width:12px; height:12px; }
+
+/* slots */
+.ec.s-1{ left:0; top:calc(60 * var(--u)); transform:rotateY(4deg); transform-origin:right center; z-index:2; }
+.ec.s1{ left:calc(980 * var(--u)); top:calc(60 * var(--u)); transform:rotateY(-4deg); transform-origin:left center; z-index:2; }
+.ec.s-1 .ec-wash{ opacity:.6; }
+.ec.s1 .ec-wash{ opacity:.32; }
+.ec.s1 h3{ color:#8D909C; } .ec.s1 p{ color:#B9BCC5; }
+.ec.s0{ left:calc(380 * var(--u)); top:0; width:calc(560 * var(--u)); transform:none; z-index:3; cursor:default; }
+.ec.s0 .ec-im{ height:calc(380 * var(--u)); box-shadow:0 calc(40 * var(--u)) calc(70 * var(--u)) calc(-40 * var(--u)) rgba(19,22,39,.5); }
+.ec.s0 .ec-im img{ transform:scale(1.02); }
+.ec.s0 .ec-wash{ opacity:0; }
+.ec.s0 h3{ margin-top:calc(24 * var(--u)); font-size:max(16px, calc(19 * var(--u))); color:#131627; }
+.ec.s0 p{ max-width:none; color:#6E7180; }
+.ec:not(.s0) .ec-bdg.r{ opacity:0; }
+.ec:not(.s0):hover .ec-wash{ opacity:.2; }
+.ec:not(.s0):hover .ec-im img{ transform:scale(1.08); }
+.ec.s0:hover .ec-im img{ transform:scale(1.06); }
+/* jo card peeche se ghoom ke aata hai */
+.ec.in-r{ animation:ecInR 1s var(--ease) backwards; }
+.ec.in-l{ animation:ecInL 1s var(--ease) backwards; }
+@keyframes ecInR{ from{ opacity:0; transform:translateX(calc(120 * var(--u))) rotateY(-50deg) scale(.86); } to{ opacity:1; transform:rotateY(-4deg); } }
+@keyframes ecInL{ from{ opacity:0; transform:translateX(calc(-120 * var(--u))) rotateY(50deg) scale(.86); } to{ opacity:1; transform:rotateY(4deg); } }
+
+/* nav */
+.eh-nav{ display:flex; justify-content:center; align-items:center; gap:calc(14 * var(--u)); margin-top:calc(80 * var(--u)); }
+.eh-arr{ display:grid; place-items:center; width:max(40px, calc(44 * var(--u))); height:max(40px, calc(44 * var(--u))); border-radius:50%;
+  border:1px solid rgba(19,22,39,.3); background:#fff; color:#131627; cursor:pointer; padding:0;
+  transition:transform .3s var(--ease), background .3s, color .3s, border-color .3s; }
+.eh-arr.dk{ background:#131627; color:#fff; border-color:#131627; }
+.eh-arr:hover{ transform:scale(1.08); background:#FEDF27; color:#131627; border-color:#FEDF27; }
+.eh-dots{ display:flex; align-items:center; gap:6px; }
+.eh-dots button{ position:relative; overflow:hidden; width:6px; height:6px; padding:0; border:0; border-radius:999px; cursor:pointer;
+  background:rgba(19,22,39,.22); transition:width .5s var(--ease); }
+.eh-dots button.on{ width:24px; }
+.eh-dots button.on::after{ content:""; position:absolute; inset:0; background:#131627; transform-origin:left; transform:scaleX(1); }
+.eh-dots.play button.on::after{ animation:ehProg var(--dur) linear both; }
+@keyframes ehProg{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }
+
+/* reveal */
+.eh .an{ opacity:0; transform:translateY(calc(24 * var(--u))); filter:blur(8px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay:var(--d,0s); }
+.eh.is-in .an{ opacity:1; transform:none; filter:none; }
+.eh .w{ display:inline-block; opacity:0; filter:blur(12px); transform:translateY(.3em);
+  transition:opacity 1s var(--ease), filter 1s var(--ease), transform 1s var(--ease); transition-delay:var(--d,0s); }
+.eh.is-in .w{ opacity:1; filter:none; transform:none; }
+/* entry (har baar section pe aane par): pehle beech wala card, phir side cards bahar se paas aate hain */
+.eh:not(.is-in) .ec.s0{ opacity:0; transform:translateY(calc(50 * var(--u))) scale(.94); }
+.eh:not(.is-in) .ec.s-1{ opacity:0; left:calc(-260 * var(--u)); }
+.eh:not(.is-in) .ec.s1{ opacity:0; left:calc(1240 * var(--u)); }
+.eh.fresh .ec.s-1,.eh.fresh .ec.s1{ transition-delay:.3s; }
+
+/* tablet: wahi 3-card layout, screen ke hisaab se chhota */
+@media (max-width:1023px){
+  .eh{ --u:calc((var(--vw) - 64px) / 1320); padding:72px 0 56px; }
+  .eh-head{ padding:0; flex-wrap:wrap; }
+  .eh-strip{ margin-top:28px; }
+  .eh-track{ margin-top:20px; height:calc(380 * var(--u) + 110px); }
+  .eh-nav{ margin-top:28px; }
+}
+/* phone: ek card poori width, baaki swipe / auto */
+@media (max-width:767px){
+  .eh{ padding:64px 0 52px; }
+  .eh-box{ width:auto; padding:0 20px; }
+  .eh-head{ flex-direction:column; gap:0; }
+  .eh-h .a{ font-size:clamp(34px, 10vw, 44px); }
+  .eh-h .b{ font-size:clamp(36px, 10.6vw, 46px); }
+  .eh-p{ margin-top:18px; max-width:none; }
+  .eh-strip{ display:none; }
+  .eh-track{ height:auto; margin-top:28px; perspective:none; }
+  .ec{ position:relative; display:none; width:100% !important; left:auto !important; top:auto !important; transform:none !important; }
+  .ec.s0{ display:block; animation:ecMob .7s var(--ease) both; }
+  .ec.s0 .ec-im{ height:auto; aspect-ratio:4/3; }
+  .ec.s0 h3{ font-size:18px; margin-top:18px; }
+  .ec.s0 p{ font-size:13px; }
+  .eh-nav{ margin-top:28px; gap:12px; }
+}
+@keyframes ecMob{ from{ opacity:0; transform:translateX(30px); } to{ opacity:1; transform:none; } }
+
+/* =========================== 7. SPONSORSHIP =========================== */
+/* Baaki sections jaisa: --u = 1 Figma px @1440, Instrument Serif + Onest. */
+.ev-sponsor{ --u:calc(var(--cw) / 1320); background:#F2EEE5; color:#131627;
+  padding:calc(100 * var(--u)) 0 calc(100 * var(--u)); }
+.ev-sponsor .ev-wrap{ max-width:none; width:calc(1320 * var(--u)); padding:0; }
+.ev-sponsor .ev-eyebrow{ font-family:var(--sans); font-weight:600; font-size:max(11px, calc(13 * var(--u))); line-height:1;
+  letter-spacing:.27em; color:#AD970E; }
+.ev-sp-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:calc(40 * var(--u)); }
+.ev-sp-h{ margin:calc(24 * var(--u)) 0 0; line-height:1; }
+.ev-sp-h .a{ display:block; font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:max(40px, calc(62 * var(--u)));
+  line-height:1; color:#131627; white-space:nowrap; }
+.ev-sp-h .b{ display:block; margin-top:calc(14 * var(--u)); font-family:var(--sans); font-weight:600; text-transform:uppercase;
+  font-size:max(30px, calc(56 * var(--u))); line-height:1; letter-spacing:.005em; color:#D39A1B; white-space:nowrap; }
+.ev-sp-lead{ max-width:max(280px, calc(380 * var(--u))); margin:0; font-family:var(--sans); font-weight:400;
+  font-size:max(13px, calc(14 * var(--u))); line-height:1.5; color:#6E7180; }
+.ev-sp-hand{ margin:calc(16 * var(--u)) 0 0; font-family:'Onest',system-ui,sans-serif; font-style:normal; font-weight:600;
+  font-size:max(17px, calc(22 * var(--u))); line-height:1.2; letter-spacing:-.005em; color:#D39A1B; }
+
+/* list + form: dono ki height barabar, 5 cards ek jaisi height ke */
+.ev-sp-grid{ display:grid; grid-template-columns:minmax(0, 1.12fr) minmax(0, 1fr); gap:calc(32 * var(--u));
+  margin-top:calc(52 * var(--u)); align-items:stretch; }
+.ev-sp-list{ display:grid; grid-template-rows:repeat(5, minmax(0, 1fr)); gap:calc(12 * var(--u)); }
+.ev-sp-list > *{ display:flex; min-height:0; }
+.ev-sp-card{ all:unset; box-sizing:border-box; width:100%; min-height:calc(92 * var(--u)); cursor:pointer;
+  display:grid; grid-template-columns:calc(22 * var(--u)) minmax(0, 1fr) calc(130 * var(--u)); align-items:center;
+  column-gap:calc(20 * var(--u)); padding:calc(18 * var(--u)) calc(26 * var(--u)) calc(18 * var(--u)) calc(24 * var(--u));
+  border-radius:calc(12 * var(--u)); background:#fff; border:1px solid rgba(19,22,39,.08); color:#131627;
+  transition:background .45s var(--ease), border-color .45s, transform .45s var(--ease), box-shadow .45s var(--ease); }
+.ev-sp-card > span:nth-child(2){ display:flex; flex-direction:column; justify-content:center; min-width:0; }
+.ev-sp-card:hover{ transform:translateX(calc(6 * var(--u))); border-color:rgba(211,154,27,.55);
+  box-shadow:0 calc(16 * var(--u)) calc(30 * var(--u)) calc(-22 * var(--u)) rgba(19,22,39,.5); }
+.ev-sp-card:focus-visible{ outline:2px solid #D39A1B; outline-offset:2px; }
+.ev-sp-radio{ width:max(18px, calc(22 * var(--u))); height:max(18px, calc(22 * var(--u))); border-radius:50%;
+  border:1.5px solid rgba(19,22,39,.35); display:grid; place-items:center; transition:border-color .3s; }
+.ev-sp-radio::after{ content:""; width:50%; height:50%; border-radius:50%; background:#FEDF27; transform:scale(0);
+  transition:transform .45s cubic-bezier(.3,1.6,.4,1); }
+.ev-sp-title{ display:flex; align-items:center; flex-wrap:wrap; gap:calc(10 * var(--u)); font-family:var(--sans); font-weight:600;
+  font-size:max(15px, calc(18 * var(--u))); line-height:1.2; }
+.ev-sp-desc{ display:block; margin-top:calc(6 * var(--u)); font-family:var(--sans); font-weight:400;
+  font-size:max(12.5px, calc(13.5 * var(--u))); line-height:1.5; color:#6E7180; transition:color .3s; }
+.ev-sp-price{ justify-self:end; text-align:right; white-space:nowrap; font-family:'Onest',system-ui,sans-serif; font-weight:600;
+  font-size:max(22px, calc(30 * var(--u))); line-height:1; letter-spacing:-.01em; color:#131627; transition:color .3s; }
+.ev-sp-badge{ font-style:normal; font-family:var(--sans); font-size:max(9px, calc(10 * var(--u))); font-weight:700; letter-spacing:.18em;
+  text-transform:uppercase; line-height:1; padding:calc(5 * var(--u)) calc(10 * var(--u)); border-radius:999px;
+  background:rgba(211,154,27,.14); color:#B98515; }
+.ev-sp-card.is-on{ background:#131627; border-color:#131627; color:#fff; }
+.ev-sp-card.is-on .ev-sp-radio{ border-color:#FEDF27; }
+.ev-sp-card.is-on .ev-sp-radio::after{ transform:scale(1); }
+.ev-sp-card.is-on .ev-sp-desc{ color:rgba(255,255,255,.62); }
+.ev-sp-card.is-on .ev-sp-price{ color:#FEDF27; }
+.ev-sp-card.is-on .ev-sp-badge{ background:rgba(254,223,39,.16); color:#FEDF27; }
+
+/* form */
+.ev-sp-grid > .ev-rv{ display:flex; }
+.ev-sp-form{ position:relative; overflow:hidden; width:100%; box-sizing:border-box; border-radius:calc(16 * var(--u));
+  background:#131627; color:#fff; padding:calc(38 * var(--u)) calc(38 * var(--u)) calc(32 * var(--u));
+  box-shadow:0 calc(40 * var(--u)) calc(80 * var(--u)) calc(-40 * var(--u)) rgba(16,18,31,.7); }
+.ev-sp-form::before{ content:""; position:absolute; width:340px; height:340px; right:-140px; top:-160px; border-radius:50%;
+  background:radial-gradient(circle, rgba(254,223,39,.18), transparent 65%); pointer-events:none; animation:evGlow 9s ease-in-out infinite; }
+.ev-sp-form > *{ position:relative; }
+.ev-sp-form h3{ margin:0; font-family:'Onest',system-ui,sans-serif; font-weight:600; font-size:max(24px, calc(32 * var(--u))); line-height:1.1; letter-spacing:-.01em; }
+.ev-sp-form > p{ margin:calc(12 * var(--u)) 0 calc(10 * var(--u)); font-family:var(--sans); font-size:max(12.5px, calc(13.5 * var(--u)));
+  line-height:1.5; color:rgba(255,255,255,.62); }
+.ev-sp-label{ display:block; font-family:var(--sans); font-size:max(10px, calc(11 * var(--u))); letter-spacing:.18em; font-weight:600;
+  text-transform:uppercase; color:rgba(255,255,255,.55); margin:calc(18 * var(--u)) 0 calc(8 * var(--u)); }
+.ev-sp-input{ width:100%; box-sizing:border-box; font-family:var(--sans); font-size:max(14px, calc(15 * var(--u))); color:#fff;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14); border-radius:calc(10 * var(--u));
+  height:max(44px, calc(48 * var(--u))); padding:0 calc(16 * var(--u)); outline:none;
+  transition:border-color .3s, background .3s, box-shadow .3s; }
+.ev-sp-input::placeholder{ color:rgba(255,255,255,.32); }
+.ev-sp-input:focus{ border-color:#FEDF27; background:rgba(255,255,255,.08); box-shadow:0 0 0 4px rgba(254,223,39,.12); }
+.ev-sp-select{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FEDF27' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 16px center; }
+.ev-sp-select option{ color:#131627; }
+.ev-sp-error{ margin:14px 0 0; font-size:12.5px; color:#ff9b8a; }
+.ev-sp-submit{ all:unset; box-sizing:border-box; cursor:pointer; margin-top:calc(28 * var(--u)); width:100%; display:flex; justify-content:space-between;
+  align-items:center; gap:10px; border-radius:999px; background:#FEDF27; color:#131627; font-family:var(--sans); font-weight:600;
+  font-size:max(12px, calc(13 * var(--u))); letter-spacing:.12em; text-transform:uppercase; padding:7px 7px 7px 24px; transition:background .3s, transform .35s var(--ease), box-shadow .35s; }
+.ev-sp-submit .ev-pill-ic{ display:grid; place-items:center; border-radius:999px; background:var(--ink); color:#fff;
+  width:36px; height:36px; flex:none; transition:transform .4s var(--ease); }
+.ev-sp-submit:hover{ background:#ffe85c; transform:translateY(-2px); box-shadow:0 14px 30px -12px rgba(245,197,24,.6); }
+.ev-sp-submit:hover .ev-pill-ic{ transform:translateX(3px) rotate(-45deg); }
+.ev-sp-submit:disabled{ opacity:.6; pointer-events:none; }
+.ev-sp-fine{ margin:14px 0 0; font-family:var(--sans); font-size:max(11px, calc(11.5 * var(--u))); line-height:1.55; color:rgba(255,255,255,.42); text-align:center; }
+.ev-sp-overlay{ position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:20px;
+  background:rgba(10,12,24,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); animation:evFade .35s ease forwards; }
+@keyframes evFade{ from{ opacity:0 } to{ opacity:1 } }
+.ev-sp-pop{ position:relative; width:min(440px,100%); border-radius:20px; background:var(--cream); color:var(--ink);
+  text-align:center; padding:44px 32px 34px; box-shadow:0 40px 80px -30px rgba(0,0,0,.6);
+  animation:evPop .6s cubic-bezier(.3,1.4,.4,1) forwards; }
+@keyframes evPop{ from{ opacity:0; transform:translateY(24px) scale(.9) } to{ opacity:1; transform:none } }
+.ev-sp-close{ all:unset; cursor:pointer; position:absolute; top:14px; right:14px; width:32px; height:32px; border-radius:50%;
+  display:grid; place-items:center; color:var(--ink); background:rgba(22,26,43,.06); transition:background .3s, transform .3s; }
+.ev-sp-close:hover{ background:rgba(22,26,43,.12); transform:rotate(90deg); }
+.ev-sp-check{ display:inline-grid; place-items:center; width:64px; height:64px; border-radius:50%; background:var(--navy); color:var(--gold);
+  animation:evPop .7s cubic-bezier(.3,1.6,.4,1) .15s both; }
+.ev-sp-pop h3{ margin:20px 0 0; font-family:'Onest',system-ui,sans-serif; font-weight:600; font-size:28px; line-height:1.15; }
+.ev-sp-pop p{ margin:12px 0 0; font-family:var(--sans); font-size:13.5px; line-height:1.65; color:var(--muted); }
+.ev-sp-pop p.next{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line); color:var(--mustard); font-weight:500; font-size:12.5px; }
+
+/* =========================== 8. INVITATION =========================== */
+/* Scroll ke saath card chhota + feeka se poora + gehra hota hai (video jaisa), phir text aata hai.
+   --p (0 -> 1) JS se set hota hai. */
+.iv{ --u:calc(var(--cw) / 1320); --p:0; background:#F2EEE5; padding:calc(10 * var(--u)) 0 calc(40 * var(--u)); }
+.iv-card{ width:var(--cw); margin:0 auto; }
+.iv-card{ position:relative; isolation:isolate; overflow:hidden; color:#fff; min-height:calc(560 * var(--u));
+  border-radius:calc(22 * var(--u) + (1 - var(--p)) * 10px); display:flex;
+  transform:translateY(calc((1 - var(--p)) * 60px)) scale(calc(.88 + var(--p) * .12)); transform-origin:50% 100%;
+  box-shadow:0 calc(40 * var(--u)) calc(90 * var(--u)) calc(-40 * var(--u)) rgba(14,15,20,calc(var(--p) * .55)); will-change:transform; }
+.iv-bg{ position:absolute; inset:-6% 0; width:100%; height:112%; object-fit:cover; z-index:-3;
+  transform:scale(calc(1.3 - var(--p) * .22)); filter:saturate(calc(.4 + var(--p) * .55)); will-change:transform; }
+.iv-shade{ position:absolute; inset:0; z-index:-2; pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(12,13,20,.9) 0%, rgba(12,13,20,.7) 40%, rgba(12,13,20,.38) 72%, rgba(12,13,20,.6) 100%),
+    linear-gradient(0deg, rgba(12,13,20,.72) 0%, transparent 55%); }
+.iv-wash{ position:absolute; inset:0; z-index:-1; background:#E9E6E0; opacity:calc((1 - var(--p)) * .85); pointer-events:none; }
+.iv-glow{ position:absolute; z-index:-1; width:calc(620 * var(--u)); height:calc(620 * var(--u)); right:calc(-140 * var(--u)); top:calc(-260 * var(--u));
+  border-radius:50%; background:radial-gradient(circle, rgba(254,223,39,.2), transparent 65%); pointer-events:none;
+  animation:ivGlow 9s ease-in-out infinite; }
+@keyframes ivGlow{ 0%,100%{ transform:translate(0,0) } 50%{ transform:translate(calc(-80 * var(--u)), calc(80 * var(--u))) } }
+
+.iv-in{ width:100%; display:flex; justify-content:space-between; align-items:flex-end; gap:calc(40 * var(--u));
+  padding:calc(64 * var(--u)) calc(64 * var(--u)) calc(60 * var(--u)); }
+.iv-ey{ display:block; font-family:var(--sans); font-weight:600; font-size:max(10px, calc(11.5 * var(--u))); line-height:1;
+  letter-spacing:.3em; color:rgba(255,255,255,.72); text-transform:uppercase; }
+.iv-h{ margin:calc(26 * var(--u)) 0 0; font-family:'Instrument Serif',Georgia,serif; font-weight:400; line-height:.95;
+  font-size:max(48px, calc(104 * var(--u))); letter-spacing:-.01em; color:#fff; white-space:nowrap; }
+.iv-when{ display:flex; flex-wrap:wrap; align-items:center; column-gap:.65em; row-gap:4px; margin:calc(28 * var(--u)) 0 0;
+  font-family:'Onest',system-ui,sans-serif; font-weight:600; font-size:max(14px, calc(16 * var(--u))); line-height:1.3;
+  letter-spacing:.01em; color:#fff; }
+.iv-when .sep{ display:inline-block; width:5px; height:5px; border-radius:50%; background:#FFFFFF; flex:none; }
+.iv-when .t{ color:#FFFFFF; }
+.iv-where{ margin:calc(10 * var(--u)) 0 0; font-family:'Onest',system-ui,sans-serif; font-weight:600; font-size:max(14px, calc(16 * var(--u)));
+  line-height:1.3; letter-spacing:.01em; color:#FFFFFF; }
+.iv-chips{ display:flex; flex-wrap:wrap; gap:calc(10 * var(--u)); margin-top:calc(24 * var(--u)); }
+.iv-chips span{ font-family:var(--sans); font-size:max(11px, calc(12.5 * var(--u))); line-height:1; color:rgba(255,255,255,.92);
+  border:1px solid rgba(255,255,255,.45); border-radius:999px; padding:calc(8 * var(--u)) calc(14 * var(--u));
+  transition:background .3s, border-color .3s, color .3s; }
+.iv-chips span:hover{ background:rgba(254,223,39,.12); border-color:#FEDF27; color:#FEDF27; }
+.iv-btn{ display:inline-flex; align-items:center; gap:calc(16 * var(--u)); margin-top:calc(36 * var(--u)); text-decoration:none;
+  background:#fff; color:#131627; border-radius:999px; padding:calc(7 * var(--u)) calc(7 * var(--u)) calc(7 * var(--u)) calc(26 * var(--u));
+  font-family:var(--sans); font-weight:700; font-size:max(11.5px, calc(13 * var(--u))); letter-spacing:.12em; line-height:1;
+  position:relative; overflow:hidden; transition:transform .35s var(--ease), box-shadow .35s var(--ease); }
+.iv-btn::before{ content:""; position:absolute; inset:0; background:#FEDF27; border-radius:inherit; transform:translateX(-101%);
+  transition:transform .5s var(--ease); }
+.iv-btn > *{ position:relative; }
+.iv-btn i{ display:grid; place-items:center; width:max(32px, calc(38 * var(--u))); height:max(32px, calc(38 * var(--u)));
+  border-radius:50%; background:#131627; color:#fff; transition:transform .45s var(--ease); }
+.iv.is-in .iv-btn:hover{ transform:translateY(-2px); box-shadow:0 16px 36px -12px rgba(254,223,39,.55); }
+.iv-btn:hover::before{ transform:none; }
+.iv-btn:hover i{ transform:rotate(45deg); }
+.iv-btn::after{ content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; animation:ivRing 2.8s ease-out 2s infinite; }
+@keyframes ivRing{ 0%{ box-shadow:0 0 0 0 rgba(255,255,255,.45) } 70%,100%{ box-shadow:0 0 0 14px rgba(255,255,255,0) } }
+.iv-q{ margin:0; text-align:right; font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:max(20px, calc(32 * var(--u)));
+  line-height:1.12; color:rgba(255,255,255,.94); }
+
+/* text reveal jab card khul jaye */
+.iv .an{ opacity:0; transform:translateY(calc(22 * var(--u))); filter:blur(8px);
+  transition:opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); transition-delay:var(--d,0s); }
+.iv.is-in .an{ opacity:1; transform:none; filter:none; }
+.iv .w{ display:inline-block; opacity:0; filter:blur(14px); transform:translateY(.25em) scale(1.06);
+  transition:opacity 1.1s var(--ease), filter 1.1s var(--ease), transform 1.1s var(--ease); transition-delay:var(--d,0s); }
+.iv.is-in .w{ opacity:1; filter:none; transform:none; }
+.iv-ey.an{ letter-spacing:.6em; transition-property:opacity, transform, filter, letter-spacing; }
+.iv.is-in .iv-ey.an{ letter-spacing:.3em; }
+
+@media (max-width:1023px){
+  .iv{ --u:.8px; padding:8px 32px 32px; }
+  .iv-card{ width:auto; }
+  .iv-in{ flex-direction:column; align-items:flex-start; padding:56px 40px 44px; }
+  .iv-q{ text-align:left; }
+}
+@media (max-width:640px){
+  .iv{ padding:6px 20px 24px; }
+  .iv-card{ min-height:0; }
+  .iv-in{ padding:44px 24px 34px; gap:28px; }
+  .iv-h{ font-size:clamp(46px, 14vw, 60px); white-space:normal; }
+  .iv-btn{ margin-top:28px; }
+}
+
+/* =========================== RESPONSIVE =========================== */
+@media (max-width:1023px){
+  .ev-sponsor{ --u:.8px; padding:88px 0; }
+  .ev-sponsor .ev-wrap{ width:auto; padding:0 32px; max-width:760px; }
+  .ev-sp-grid{ grid-template-columns:1fr; }
+  .ev-sp-list{ grid-template-rows:none; grid-auto-rows:1fr; }
+  .ev-sp-head{ flex-direction:column; align-items:flex-start; gap:18px; }
+}
+@media (max-width:767px){
+  .ev-sponsor{ padding:72px 0; }
+  .ev-sponsor .ev-wrap{ padding:0 20px; }
+  .ev-sp-h .b{ font-size:clamp(28px, 8.6vw, 38px); }
+  .ev-sp-h .a{ font-size:clamp(38px, 11vw, 48px); }
+  .ev-sp-list{ grid-auto-rows:auto; }
+  .ev-sp-card{ grid-template-columns:20px minmax(0,1fr) auto; column-gap:14px; padding:16px; align-items:start; }
+  .ev-sp-radio{ margin-top:1px; }
+  .ev-sp-price{ font-size:20px; }
+  .ev-sp-card:hover{ transform:none; }
+  .ev-sp-form{ padding:28px 20px 24px; }
+}
+
+/* chhoti screen: multi-line headings me thodi zyada line spacing, taaki lines aapas me na takrayein */
+@media (max-width:767px){
+  .pp-h{ line-height:.98; }
+  .eh-h .b{ margin-top:6px; }
+  .rs-h{ line-height:1.12; }
+  .rr-h .b{ line-height:1.12; }
+  .iv-h{ line-height:1.04; }
+  .ev-sp-h .b{ line-height:1.1; }
+  .rm-h .b{ line-height:1.1; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ev *,.ev *::before,.ev *::after{ animation:none !important; transition:none !important; }
+  .ev-rv,.ev-words .ev-w,.ev-hero .ev-in,.ev-hero .ev-drop,.ev-hero .ev-w,.ev-hero-img,.ev-facts .ev-fact{ opacity:1 !important; transform:none !important; filter:none !important; }
+  .ev-room .rm-a,.rm-h .w,.rm-h .c,.rm-pill,.rm-avs img{ opacity:1 !important; transform:none !important; filter:none !important; }
+  .rm-line,.rm-sep,.rm-dots span::before{ transform:none !important; }
+  .rm-img{ clip-path:none !important; opacity:1 !important; filter:none !important; }
+  .pp-ph{ clip-path:none !important; transform:none !important; }
+  .pp .rm-a,.pp-h .w,.pp-face figcaption{ opacity:1 !important; transform:none !important; filter:none !important; }
+  .ev-hero-sheen,.ev-eyebrow-box::after{ display:none; }
+  .rr .an,.rr .w,.rr-lines li,.rs .w,.rs .an,.rs-n{ opacity:1 !important; transform:none !important; filter:none !important; translate:none !important; }
+  .rr-foot i,.rs-line,.rs-div,.rr-lines li .rr-star{ transform:none !important; }
+  .rr-ph{ clip-path:none !important; opacity:1 !important; }
+  .rs-ic{ scale:1 !important; opacity:1 !important; }
+  .eh .an,.eh .w,.eh-track,.eh .ec.s0{ opacity:1 !important; transform:none !important; filter:none !important; }
+  .eh:not(.is-in) .ec.s-1,.eh:not(.is-in) .ec.s1{ opacity:1 !important; }
+  .eh:not(.is-in) .ec.s-1{ left:0; } .eh:not(.is-in) .ec.s1{ left:calc(980 * var(--u)); }
+  .ec.s-1,.ec.s1{ transform:none !important; }
+  .iv{ --p:1 !important; }
+  .iv .an,.iv .w{ opacity:1 !important; transform:none !important; filter:none !important; }
+  .rr.is-in .rr-eye.an{ letter-spacing:.27em; }
 }
 `;
 
-/* ---------------- SCENE + REVEAL HELPERS ------------------ */
-
-/** Normal section (pin nahi). bg = background layer (image/shade). */
-function Scene({
-  id,
-  className = "",
-  bg,
-  children,
-}: {
-  id?: string;
-  className?: string;
-  bg?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section id={id} className="ev-scene">
-      <div className={`ev-scene-stick ${className}`}>
-        {bg}
-        <div className="ev-scene-body">{children}</div>
-      </div>
-    </section>
-  );
-}
-
-/** Section screen me aate hi: blur + niche se upar + fade-in. Ek baar chalta hai, phir tika rehta hai.
- *  d = stagger delay (0 se 0.1). y = kitna neeche se aaye. */
-function Rise({
-  children,
-  className,
-  d = 0,
-  y = 14,
-}: {
-  children: ReactNode;
-  className?: string;
-  d?: number;
-  y?: number;
-}) {
-  const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: y * 3, filter: "blur(10px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.9, delay: d * 6, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/** Evening timeline ke liye scroll-scrubbed reveal: aate waqt blur + rise. */
-function Reveal({
-  children,
-  className,
-  tag = "div",
-}: {
-  children: ReactNode;
-  className?: string;
-  tag?: "div" | "li";
-}) {
-  const ref = useRef<HTMLElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 95%", "start 62%"] });
-  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  const y = useTransform(scrollYProgress, [0, 1], ["8vh", "0vh"]);
-  const blur = useTransform(scrollYProgress, [0, 1], [10, 0]);
-  const filter = useMotionTemplate`blur(${blur}px)`;
-  const Comp = tag === "li" ? motion.li : motion.div;
-  return (
-    <Comp
-      ref={ref as never}
-      style={reduce ? undefined : { opacity, y, filter }}
-      className={className}
-    >
-      {children}
-    </Comp>
-  );
-}
-
-/* ------------------------------ HELPERS ------------------------------------ */
-function ReserveButton({ className = "" }: { className?: string }) {
-  return (
-<a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className={`ev-btn-gold ${className}`}>
-      Reserve Your Place <ArrowRight size={16} />
-    </a>
-  );
-}
-
-/** Ek chapter ka text block — scroll ke saath fade + slide + blur. */
-function ChapterText({ i, progress, children }: { i: number; progress: MotionValue<number>; children: ReactNode }) {
-  const reduce = useReducedMotion();
-  const r = textRange(i);
-  const opacity = useTransform(progress, r.input, r.op);
-  const y = useTransform(progress, r.input, reduce ? r.y.map(() => "0vh") : r.y);
-  const blur = useTransform(progress, r.input, reduce ? r.blur.map(() => 0) : r.blur);
-  const filter = useMotionTemplate`blur(${blur}px)`;
-  const pointerEvents = useTransform(opacity, (v) => (v > 0.5 ? "auto" : "none"));
-
-  return (
-    <motion.div
-      style={{ opacity, y, filter, pointerEvents }}
-      className={`absolute inset-0 flex items-start md:items-center ${i > 0 ? "ev-chbig" : "ev-ch1"}`}
-    >
-      <div className="section ev-hero-inner my-auto w-full md:my-0">
-        <div className="ev-textglow">{children}</div>
-      </div>
-    </motion.div>
-  );
-}
-
-/** Hero ki single tower image — scroll ke saath drone shot: base se top tak, phir zoom-out full view. */
-function TowerLayer({ src, progress }: { src: string; progress: MotionValue<number> }) {
-  const reduce = useReducedMotion();
-  const keys = useRef(towerKeys(2.6, 0.72));
-
-  useEffect(() => {
-    const set = () => {
-      const a = window.innerWidth / window.innerHeight;
-      // wide screen: bada zoom | square/tall screen: kam zoom taaki tower text par na chadhe
-      const [s, tx] = a >= 1.5 ? [2.6, 0.72] : a >= 0.9 ? [1.8, 0.76] : [2.1, 0.6];
-      keys.current = towerKeys(s, tx);
-    };
-    set();
-    window.addEventListener("resize", set);
-    return () => window.removeEventListener("resize", set);
-  }, []);
-
-  const scale = useTransform(progress, (p) => (reduce ? 1 : transform(p, KEY_P, keys.current.S)));
-  const x = useTransform(progress, (p) => (reduce ? "0%" : `${transform(p, KEY_P, keys.current.X)}%`));
-  const y = useTransform(progress, (p) => (reduce ? "0%" : `${transform(p, KEY_P, keys.current.Y)}%`));
-
-  return (
-    <motion.img
-      src={src}
-      alt=""
-      draggable={false}
-      style={{ scale, x, y, objectPosition: "66% 50%" }}
-      className="absolute inset-0 h-full w-full select-none object-cover will-change-transform"
-    />
-  );
-}
-
-/** Aakhri image — hero ke end me zoom-out hoke khulti hai (video jaisa finale). */
-function FinaleLayer({ src, progress }: { src: string; progress: MotionValue<number> }) {
-  const reduce = useReducedMotion();
-  const opacity = useTransform(progress, [0.86, 0.98], [0, 1]);
-  const scale = useTransform(progress, [0.86, 1], reduce ? [1, 1] : [1.3, 1]);
-  const y = useTransform(progress, [0.86, 1], reduce ? ["0%", "0%"] : ["-8%", "0%"]);
-
-  return (
-    <motion.img
-      src={src}
-      alt=""
-      draggable={false}
-      style={{ opacity, scale, y }}
-      className="absolute inset-0 h-full w-full select-none object-cover will-change-transform"
-    />
-  );
-}
-
-/* ------------------------------ HERO --------------------------------------- */
-function useHeaderH() {
-  const [h, setH] = useState(72);
-  useEffect(() => {
-    const m = () => {
-      const el = document.querySelector("header");
-      const v = el ? Math.round(el.getBoundingClientRect().height) : 72;
-      setH(v || 72);
-    };
-    m();
-    window.addEventListener("resize", m);
-    return () => window.removeEventListener("resize", m);
-  }, []);
-  return h;
-}
+/* =========================== 1. HERO =========================== */
 function Hero() {
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 72px", "end end"] });
+  const [ref, on] = useInView<HTMLElement>(0.35);
+  // hero se bahar jaa ke wapas aaye to poori entry animation dobara chale
+  const [run, setRun] = useState(0);
+  const wasOut = useRef(false);
+  useEffect(() => {
+    if (!on) wasOut.current = true;
+    else if (wasOut.current) {
+      wasOut.current = false;
+      setRun((r) => r + 1);
+    }
+  }, [on]);
+  const t = (d: number): CSSProperties => ({ animationDelay: `${d}s` });
+  const word = (w: string, d: number, gold = false) => (
+    <span className={`ev-w ${gold ? "ev-gold" : ""}`} style={t(d)}>{w}</span>
+  );
+
+  // mouse ke saath image halki si khiskti hai (sirf desktop / mouse wale devices)
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fine = window.matchMedia("(pointer:fine)").matches;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!fine || reduce) return;
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.setProperty("--mx", `${(-x * 18).toFixed(1)}px`);
+      el.style.setProperty("--my", `${(-y * 12).toFixed(1)}px`);
+    };
+    const onLeave = () => {
+      el.style.setProperty("--mx", "0px");
+      el.style.setProperty("--my", "0px");
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
 
   return (
-    <section ref={ref} id="arrival" style={{ height: SCROLL_HEIGHT }} className="relative">
-      <div className="ev-hero sticky top-[72px] h-[calc(100svh-72px)] overflow-hidden bg-[#0A0E1F]">
-        {/* background: ek hi tower image (drone shot) */}
-        <TowerLayer src={IMG.heroTower} progress={scrollYProgress} />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(10,12,23,0.85) 0%, rgba(10,12,23,0.65) 42%, rgba(10,12,23,0.08) 75%, rgba(10,12,23,0) 100%)",
-          }}
-        />
-        {IMG.skyline && <FinaleLayer src={IMG.skyline} progress={scrollYProgress} />}
+    <section ref={ref} className="ev-hero" aria-label="BrickShare Capital launch evening">
+      <div key={`m${run}`} className="ev-hero-media" aria-hidden>
+        <img className="ev-hero-img" src={IMG.hero} alt="" decoding="async" />
+      </div>
+      <span key={`s${run}`} className="ev-hero-sheen" aria-hidden />
 
-        {/* Chapter 1 — Arrival */}
-        <ChapterText i={0} progress={scrollYProgress}>
-          <p className="ev-eyebrow">{chapters[0].eyebrow}</p>
-          <h1 className="ev-h ev-h-xl mt-5">
-            <span>{chapters[0].lead}</span>
-            <span className="ev-h-gold">{chapters[0].accent}</span>
-          </h1>
-          <p className="ev-body mt-6">{chapters[0].body}</p>
+      <div key={`c${run}`} className="ev-wrap ev-hero-in">
+        <p className="ev-eyebrow-box ev-drop" style={t(0.45)}>
+          <span>BrickShare Capital presents</span>
+          <span>·{EVENT.date}</span>
+        </p>
+        <h1 className="ev-hero-h">
+          <span className="ev-line">{word("Something", 0.8, true)} {word("new", 0.95)}</span>
+          <span className="ev-line">{word("is", 1.08)} {word("taking", 1.16)} {word("shape.", 1.3, true)}</span>
+        </h1>
+        <div className="ev-facts ev-in" style={t(1.55)}>
+          <div className="ev-fact" style={t(1.7)}><small>WHEN</small><b>{EVENT.date}, {EVENT.day}</b></div>
+          <div className="ev-fact" style={t(1.8)}><small>WHERE</small><b>{EVENT.venue}</b></div>
+          <div className="ev-fact" style={t(1.9)}><small>GUEST LIST</small><b>{EVENT.guestList}</b></div>
+        </div>
+      </div>
 
-          <div className="mt-7 grid gap-x-12 gap-y-5 sm:grid-cols-[auto_auto] sm:justify-start">
-            <div>
-              <p className="ev-meta-label">When</p>
-              <p className="ev-meta-value mt-1">{EVENT.date}</p>
-              <p className="ev-meta-sub hidden sm:block">{EVENT.time}</p>
-            </div>
-            <div>
-              <p className="ev-meta-label">Where</p>
-              <p className="ev-meta-value mt-1">{EVENT.venue}</p>
-              <p className="ev-meta-sub hidden sm:block">{EVENT.address}</p>
-            </div>
-          </div>
-
-           <div className="mt-6 flex flex-wrap gap-3 sm:mt-7">
-            <ReserveButton />
-          </div>
-          <p className="ev-note mt-5 hidden sm:block">{EVENT.note}</p>
-
-          {/* handwritten tag — desktop right side (design wale position pe) */}
-          <p className="ev-hand pointer-events-none absolute bottom-[14%] right-[clamp(24px,16vw,260px)] hidden -rotate-3 lg:block">
-            {EVENT.handwritten}
-          </p>
-        </ChapterText>
-
-        {/* Chapter 2 — The Room */}
-        <ChapterText i={1} progress={scrollYProgress}>
-          <p className="ev-eyebrow">{chapters[1].eyebrow}</p>
-          <h2 className="ev-h mt-5">
-            <span>{chapters[1].lead}</span>
-            <span className="ev-h-gold">{chapters[1].accent}</span>
-          </h2>
-          <p className="ev-body mt-6">{chapters[1].body}</p>
-        </ChapterText>
-
-        {/* Chapter 3 — The Idea */}
-        <ChapterText i={2} progress={scrollYProgress}>
-          <p className="ev-eyebrow">{chapters[2].eyebrow}</p>
-          <h2 className="ev-h mt-5">
-            <span>{chapters[2].lead}</span>
-            <span className="ev-h-gold">{chapters[2].accent}</span>
-          </h2>
-          <p className="ev-body mt-6">{chapters[2].body}</p>
-        </ChapterText>
-
-        {/* Chapter 4 — Invitation */}
-        <ChapterText i={3} progress={scrollYProgress}>
-          <p className="ev-eyebrow">{chapters[3].eyebrow}</p>
-          <h2 className="ev-h mt-5">
-            <span>{chapters[3].lead}</span>
-            <span className="ev-h-gold">{chapters[3].accent}</span>
-          </h2>
-          <p className="ev-body mt-6">{chapters[3].body}</p>
-          <p className="ev-hand mt-5 -rotate-2">{EVENT.handwritten}</p>
-          <div className="mt-6">
-            <ReserveButton />
-          </div>
-        </ChapterText>
-
-        {/* rotating badge — bottom right */}
-        <motion.img
-          src={IMG.badge}
-          alt=""
-          aria-hidden
-          draggable={false}
-          animate={reduce ? undefined : { rotate: 360 }}
-          transition={{ duration: 24, ease: "linear", repeat: Infinity }}
-          className="pointer-events-none absolute bottom-6 right-5 z-20 h-[clamp(84px,calc(var(--hu)*8.5),200px)] w-[clamp(84px,calc(var(--hu)*8.5),200px)] select-none sm:bottom-9 sm:right-9"
-        />
+      <div key={`f${run}`} className="ev-wrap ev-hero-foot">
+        <span className="l ev-in" style={t(2.05)}>Own real estate. Grow your wealth.</span>
+        <span className="ev-in" style={t(1.95)}>
+          <a className="ev-pill ev-btn-cream" href={EVENT.rsvpLink} target="_blank" rel="noopener noreferrer">
+            Reserve Your Place
+            <span className="ev-pill-ic"><ArrowRight size={16} /></span>
+          </a>
+        </span>
+        <span className="r ev-in" style={t(2.05)}>{EVENT.place} · {EVENT.shortAddress}</span>
       </div>
     </section>
   );
 }
 
-/* ---------------------------- MARQUEE -------------------------------------- */
-const MARQUEE = ["Real people", "Real conversations", "Real opportunities", "Houston real estate", "One room"];
+/* ====================== 2. A ROOM FULL OF POSSIBILITIES ===================== */
+const dl = (s: number) => ({ "--d": `${s}s` }) as CSSProperties;
 
-function Marquee() {
+function Room() {
+  const [headRef, headIn] = useInView<HTMLDivElement>(0.35);
+  const [gridRef, gridIn] = useInView<HTMLDivElement>(0.2);
+  const imgRef = useParallax<HTMLDivElement>(0.05);
+  const word = "Possibilities";
+
   return (
-    <section className="ev-marquee" aria-label="BrickShare Capital">
-      <div className="ev-marquee-track">
-        {[0, 1].map((k) => (
-          <div key={k} className="ev-marquee-item" aria-hidden={k === 1}>
-            {MARQUEE.map((t) => (
-              <span key={t} style={{ display: "contents" }}>
-                <span className="ev-marquee-text">{t}</span>
-                <span className="ev-marquee-star">✦</span>
+    <section className="ev-room" id="about-evening">
+      {/* ---- heading row ---- */}
+      <div ref={headRef} className={`rm-head ${headIn ? "is-in" : ""}`}>
+        <div className="rm-side l">
+          <span className="rm-line" style={dl(0.1)} aria-hidden />
+          <span className="rm-pill" style={dl(0.95)}>Houston</span>
+        </div>
+        <h2 className="rm-h">
+          <span className="a">
+            {["A", "Room", "Full", "Of"].map((w, i) => (
+              <span key={w} className="w" style={dl(0.05 + i * 0.13)}>
+                {w}
+                {i < 3 ? "\u00A0" : ""}
               </span>
             ))}
+          </span>
+          <span className="b" aria-label={word}>
+            {word.split("").map((c, i) => (
+              <span key={i} className="c" aria-hidden style={dl(0.55 + i * 0.035)}>{c}</span>
+            ))}
+          </span>
+        </h2>
+        <div className="rm-side r">
+          <span className="rm-pill" style={dl(1.05)}>Limited</span>
+          <span className="rm-line" style={dl(0.1)} aria-hidden />
+        </div>
+        <div className="rm-tags">
+          <span className="rm-pill" style={dl(0.9)}>Houston</span>
+          <span className="rm-pill" style={dl(1)}>Limited</span>
+        </div>
+      </div>
+
+      {/* ---- 3 columns ---- */}
+      <div ref={gridRef} className={`rm-grid ${gridIn ? "is-in" : ""}`}>
+        <div className="rm-lt">
+          <h3 className="rm-a" style={dl(0.25)}>More than an event</h3>
+          <p className="rm-a" style={dl(0.37)}>
+            Some of the best opportunities don't begin in a boardroom. They begin with a conversation, a shared idea,
+            or the right person across the room.
+          </p>
+          <a href={EVENT.rsvpLink} target="_blank" rel="noopener noreferrer" className="rm-btn rm-a" style={dl(0.5)}><span>About the evening</span></a>
+        </div>
+
+        <div className="rm-lb">
+          <p className="rm-label rm-a" style={dl(0.75)}>Who's in the room:</p>
+          <div className="rm-dots">
+            {["Investors", "Entrepreneurs", "Real estate pros"].map((t, i) => (
+              <span key={t} className="rm-a" style={dl(0.85 + i * 0.12)}>{t}</span>
+            ))}
           </div>
+        </div>
+
+        <div ref={imgRef} className="rm-img">
+          <img src={IMG.room} alt="Guests networking at a BrickShare evening" loading="lazy" decoding="async" />
+        </div>
+
+        <div className="rm-rt">
+          {ROOM_POINTS.map((p, i) => (
+            <div key={p.title}>
+              {i > 0 && <div className="rm-sep" style={dl(0.45 + i * 0.16)} aria-hidden />}
+              <div className="rm-pt rm-a" style={dl(0.35 + i * 0.16)}>
+                <h4>{p.title}</h4>
+                <p>{p.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rm-rb">
+          <p className="rm-label rm-a" style={dl(0.85)}>Your hosts:</p>
+          <div className="rm-hosts">
+            <div className="rm-avs">
+              {PEOPLE.map((p, i) => (
+                <img key={p.name} src={p.photo} alt={p.name} title={p.name} loading="lazy"
+                  style={{ objectPosition: p.pos, ...dl(0.95 + i * 0.1), ["--i" as string]: i } as CSSProperties} />
+              ))}
+            </div>
+            <div className="rm-a" style={dl(1.35)}>
+              <b>4 hosts</b>
+              <small>One vision</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ========================== 3. MEET THE PEOPLE ============================== */
+function People() {
+  const [ref, on] = useInView<HTMLElement>(0.25);
+  return (
+    <section ref={ref} className={`pp ${on ? "is-in" : ""}`} id="people">
+      <div className="pp-wrap">
+        <div className="pp-faces">
+          {PEOPLE.map((p, i) => (
+            <figure key={p.name} className="pp-face" style={dl(0.1 + i * 0.13)}>
+              <div className="pp-ph">
+                <img src={p.photo} alt={p.name} loading="lazy" decoding="async" style={{ objectPosition: p.pos }} />
+              </div>
+              <figcaption>{p.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <div className="pp-copy">
+          <h2 className="pp-h">
+            <span>
+              {["Meet", "the", "people"].map((w, i) => (
+                <span key={w} className="w" style={dl(0.35 + i * 0.1)}>{w}{i < 2 ? "\u00A0" : ""}</span>
+              ))}
+            </span>
+            <span className="g">
+              {["behind", "it."].map((w, i) => (
+                <span key={w} className="w" style={dl(0.7 + i * 0.1)}>{w}{i < 1 ? "\u00A0" : ""}</span>
+              ))}
+            </span>
+          </h2>
+          <p className="pp-p rm-a" style={dl(0.9)}>
+            Four minds, one vision. Meet the people shaping BrickShare Capital and hear the story behind what we are
+            building.
+          </p>
+          <a href={EVENT.rsvpLink} target="_blank" rel="noopener noreferrer" className="pp-btn rm-a" style={dl(1.05)}><span>Meet them</span></a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ====================== 4. THE RIGHT ROOM ================================== */
+const Star = () => (
+  <svg className="rr-star" viewBox="0 0 24 24" aria-hidden>
+    <path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z" fill="currentColor" />
+  </svg>
+);
+
+function FloatPhoto({ cls, src, speed, d }: { cls: string; src: string; speed: number; d: number }) {
+  const ref = useParallax<HTMLDivElement>(speed);
+  return (
+    <div ref={ref} className={`rr-ph ${cls}`} style={dl(d)} aria-hidden>
+      <div className="rr-ph-in"><img src={src} alt="" loading="lazy" decoding="async" /></div>
+    </div>
+  );
+}
+
+const splitWords = (text: string, start: number, step: number) =>
+  text.split(" ").map((w, i, arr) => (
+    <span key={i} className="w" style={dl(start + i * step)}>
+      {w}
+      {i < arr.length - 1 ? "\u00A0" : ""}
+    </span>
+  ));
+
+function RightRoom() {
+  const [ref, on] = useInView<HTMLElement>(0.25);
+  const lines = ["One Introduction.", "One Conversation.", "One Idea."];
+  return (
+    <section ref={ref} className={`rr ${on ? "is-in" : ""}`} id="right-room">
+      <FloatPhoto cls="p1" src={IMG.right[0]} speed={0.1} d={0.2} />
+      <FloatPhoto cls="p2" src={IMG.right[1]} speed={-0.06} d={0.35} />
+      <FloatPhoto cls="p3" src={IMG.right[2]} speed={0.08} d={0.5} />
+      <FloatPhoto cls="p4" src={IMG.right[3]} speed={-0.1} d={0.65} />
+
+      <div className="rr-in">
+        <p className="rr-eye an" style={dl(0)}>The right room</p>
+        <h2 className="rr-h">
+          <span className="a">{splitWords("The right room", 0.15, 0.1)}</span>
+          <span className="b">{splitWords("Can change everything.", 0.45, 0.1)}</span>
+        </h2>
+
+        <ul className="rr-lines">
+          {lines.map((l, i) => (
+            <li key={l} style={dl(0.85 + i * 0.25)}>
+              <Star />
+              <span>{l}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="rr-tiles" aria-hidden>
+          {IMG.right.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}
+        </div>
+
+        <div className="rr-foot">
+          <i style={dl(1.5)} />
+          <p className="an" style={dl(1.65)}>You never know what comes next.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ====================== 5. FOUR REASONS ==================================== */
+function Reasons() {
+  const [ref, on] = useInView<HTMLElement>(0.25);
+  return (
+    <section ref={ref} className={`rs ${on ? "is-in" : ""}`} id="why-attend">
+      <h2 className="rs-h">
+        <span className="a grp">{splitWords("Four reasons to", 0, 0.1)}{"\u00A0"}</span>
+        <span className="b grp">{splitWords("be in the room.", 0.3, 0.09)}</span>
+      </h2>
+      <span className="rs-line" style={dl(0.6)} aria-hidden />
+      <p className="rs-sub an" style={dl(0.75)}>Why Attend</p>
+
+      <div className="rs-grid">
+        {REASONS.map((r, i) => (
+          <article key={r.title} className="rs-card an" style={dl(0.85 + i * 0.14)}>
+            <div className="rs-top">
+              <span className="rs-ic"><Icon size={32} sw={1.5}>{r.icon}</Icon></span>
+              <span className="rs-n">{String(i + 1).padStart(2, "0")}</span>
+            </div>
+            <div className="rs-div" />
+            <h3>{r.title}</h3>
+            <p>{r.text}</p>
+          </article>
         ))}
       </div>
     </section>
   );
 }
 
-/* ------------------------ SECTION 3: A ROOM FULL ---------------------------- */
-function Room() {
-  const reduce = useReducedMotion();
-  const archRef = useRef<HTMLDivElement>(null);
-  // arch thoda andar aaye tab animation chalu (sirf ek baar)
-  const inView = useInView(archRef, { once: true, amount: 0.25, margin: "0px 0px -8% 0px" });
-  const textRef = useRef<HTMLDivElement>(null);
-  const textIn = useInView(textRef, { once: true, amount: 0.3 });
-
-  // scroll ke saath image arch ke andar dheere upar-neeche hoti hai (parallax)
-  const { scrollYProgress } = useScroll({ target: archRef, offset: ["start end", "end start"] });
-  const imgY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-4%", "4%"]);
-
-  return (
-    <Scene id="more-than-an-event" className="ev-room">
-      <div className="section grid items-center gap-10 py-[clamp(48px,5vw,calc(72px*var(--ev-k)))] lg:grid-cols-[min(calc(450px*var(--ev-k)),34vw)_1fr] lg:gap-x-[clamp(40px,6vw,calc(96px*var(--ev-k)))]">
-        <Rise y={18} className="mx-auto w-full max-w-[calc(450px*var(--ev-k))] lg:mx-0">
-          <div ref={archRef} data-in={inView} className="ev-arch relative aspect-[540/760] w-full">
-            <div aria-hidden className="ev-arch-shape ev-arch-box" />
-            <div className="ev-arch-shape ev-arch-img">
-              <div className="ev-arch-zoom">
-                <motion.img
-                  src={IMG.roomArch}
-                  alt="Two hands reaching toward a glowing golden tower"
-                  draggable={false}
-                  loading="lazy"
-                  decoding="async"
-                  style={{ y: imgY, scale: 1.1 }}
-                  className="h-full w-full select-none object-cover will-change-transform"
-                />
-              </div>
-              <div aria-hidden className="ev-arch-glow" />
-            </div>
-          </div>
-        </Rise>
-
-        <div ref={textRef} data-in={textIn} className="ev-room-col">
-          <Rise d={0.03}>
-            <p className="ev-room-eyebrow">More than an event</p>
-          </Rise>
-          <h2 className="ev-room-h ev-room-lines mt-6">
-            <span><i>A room full of</i></span>
-            <span><i>possibilities.</i></span>
-          </h2>
-          <Rise d={0.07}>
-            <p className="ev-room-p1 mt-7 max-w-[30rem]">
-              Some of the best opportunities don't begin in a boardroom. They begin with a conversation, a shared idea, or the right person across the room.
-            </p>
-            <p className="ev-room-p2 mt-6 max-w-[30rem]">
-              Join BrickShare Capital for an intimate evening bringing together investors, entrepreneurs, real estate professionals, and forward thinking minds shaping what comes next.
-            </p>
-          </Rise>
-          <Rise d={0.09}>
-            <a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className="ev-room-btn mt-7">
-              Reserve Your Place <ArrowRight size={14} />
-            </a>
-          </Rise>
-        </div>
-      </div>
-    </Scene>
-  );
-}
-
-/* ------------------------ SECTION 4: WHY ATTEND ----------------------------- */
-function WhyAttend() {
-  return (
-    <Scene id="the-people" className="ev-pad ev-sec ev-bg-800">
-     <div className="section">
-        <Rise>
-          <p className="ev-room-eyebrow">Why attend</p>
-        </Rise>
-        <Rise d={0.02}>
-          <h2 className="ev-room-h mt-6 max-w-[16ch]">Four reasons to be in the room.</h2>
-        </Rise>
-
-        <div className="ev-why-grid mt-[clamp(40px,5vw,72px)]">
-          {REASONS.map((r, i) => (
-            <Rise key={r.n} d={0.05 + i * 0.03} y={18}>
-              <div className="ev-why-item">
-                <span className="ev-numeral">{r.n}</span>
-                <h3 className="ev-why-label mt-5">{r.title}</h3>
-                <p className="ev-why-text mt-4">{r.text}</p>
-              </div>
-            </Rise>
-          ))}
-        </div>
-      </div>
-    </Scene>
-  );
-}
-
-/* --------------------- SECTION 5: THE RIGHT ROOM ---------------------------- */
-function RightRoom() {
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(bodyRef, { once: true, amount: 0.35 });
-
-  return (
-    <Scene
-      className="ev-pad ev-right py-24 lg:py-0"
-      bg={
-        IMG.rightRoomMark ? (
-          <img
-            src={IMG.rightRoomMark}
-            alt=""
-            aria-hidden
-            draggable={false}
-            data-in={inView}
-            className="ev-right-mark"
-          />
-        ) : null
-      }
-    >
-      <div ref={bodyRef} data-in={inView} className="section ev-right-body relative">
-        <h2 className="ev-right-h">
-          <span className="ev-rr-line"><i>The right room</i></span>
-          <span className="ev-rr-line"><i className="ev-gold-text">can change everything.</i></span>
-        </h2>
-
-        <p className="ev-right-sub mt-[clamp(28px,3.4vw,48px)]">
-          <span className="ev-rr-pop">One introduction.</span>
-          <span className="ev-rr-pop ev-right-star" aria-hidden>✦</span>
-          <span className="ev-rr-pop">One conversation.</span>
-          <span className="ev-rr-pop ev-right-star" aria-hidden>✦</span>
-          <span className="ev-rr-pop">One idea.</span>
-        </p>
-
-        <p className="ev-right-eyebrow mt-[clamp(24px,2.6vw,40px)]">You never know what comes next.</p>
-
-        <Rise className="mt-[clamp(28px,3vw,44px)]" d={0.2}>
-          <ReserveButton />
-        </Rise>
-      </div>
-    </Scene>
-  );
-}
-
-/* ----------------------- SECTION 6: THE PEOPLE ------------------------------ */
-function PersonCard({ p, i }: { p: (typeof PEOPLE)[number]; i: number }) {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.3 });
-
-  return (
-    <article
-      ref={ref}
-      data-in={inView}
-      className="ev-person"
-      style={{ "--d": `${i * 0.12}s` } as CSSProperties}
-    >
-      <div className={`ev-person-arch${p.photo ? " ev-person-arch--photo" : ""}`}>
-        {p.photo ? (
-          <img src={p.photo} alt={p.name} loading="lazy" decoding="async" draggable={false} />
-        ) : (
-          <>
-            <span className="ev-person-initials">{p.initials}</span>
-            <span className="ev-person-co">BrickShare Capital</span>
-          </>
-        )}
-      </div>
-      <div className="ev-person-meta">
-        <div className="ev-person-row mt-5">
-          <h3 className="ev-person-name">{p.name}</h3>
-          <a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className="ev-person-link">
-            Meet them <ArrowRight size={12} />
-          </a>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function People() {
-  const headRef = useRef<HTMLDivElement>(null);
-  const headIn = useInView(headRef, { once: true, amount: 0.5 });
-
-  return (
-    <Scene className="ev-pad ev-sec ev-bg-800">
-      <div className="section">
-        <div ref={headRef} data-in={headIn} className="ev-pp-head">
-          <Rise>
-            <p className="ev-room-eyebrow">The people behind it</p>
-          </Rise>
-          <h2 className="ev-pp-h mt-6">
-            <span><i>Four minds.</i></span>{" "}
-            <span><i>One vision.</i></span>
-          </h2>
-          <Rise d={0.04}>
-            <p className="ev-pp-sub mt-6">
-              Meet the people shaping BrickShare Capital and hear the story behind what we are building.
-            </p>
-          </Rise>
-        </div>
-
-        <div className="ev-people-grid mt-[clamp(40px,6vw,88px)]">
-          {PEOPLE.map((p, i) => (
-            <PersonCard key={p.name} p={p} i={i} />
-          ))}
-        </div>
-      </div>
-    </Scene>
-  );
-}
-
-/* ----------------------- SECTION 7: THE EVENING ----------------------------- */
-/* ----------------------- SECTION 7: THE EVENING ----------------------------- */
-function TimelineItem({ t }: { t: (typeof TIMELINE)[number] }) {
-  const ref = useRef<HTMLLIElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 92%", "start 58%"] });
-
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
-  const y = useTransform(scrollYProgress, [0, 1], ["7vh", "0vh"]);
-  const blur = useTransform(scrollYProgress, [0, 0.8], [10, 0]);
-  const filter = useMotionTemplate`blur(${blur}px)`;
-  // dot tab bharta hai jab gold line us tak pahunchti hai
-  const dot = useTransform(scrollYProgress, [0.75, 1], [0, 1]);
-  const dotScale = useTransform(dot, [0, 1], [0.4, 1]);
-
-  return (
-    <li ref={ref} className="ev-tl-li">
-      <motion.span
-        aria-hidden
-        className="ev-tl-dot"
-        style={reduce ? { opacity: 1 } : { opacity: dot, scale: dotScale }}
-      />
-      <motion.div className="ev-tl-item" style={reduce ? undefined : { opacity, y, filter }}>
-        <span className="ev-tl-time">{t.time}</span>
-        <div>
-          <h3 className="ev-tl-title">{t.title}</h3>
-          <p className="ev-tl-text">{t.text}</p>
-        </div>
-      </motion.div>
-    </li>
-  );
-}
+/* ====================== 6. THE EVENING (carousel) ========================== */
+// Carousel me sirf ye 3 cards ghoomte hain (MOMENTS ke index). Strip me poora schedule dikhta hai.
+const EVENING_CARDS = [2, 4, 5];
+const AUTOPLAY_MS = 4500;
 
 function Evening() {
-  const reduce = useReducedMotion();
-  const headRef = useRef<HTMLDivElement>(null);
-  const headIn = useInView(headRef, { once: true, amount: 0.4 });
+  const [ref, on] = useInView<HTMLElement>(0.2);
+  const n = EVENING_CARDS.length;
+  const [active, setActive] = useState(1); // "The launch moment" beech me
+  const [dir, setDir] = useState<1 | -1>(1);
+  const [spins, setSpins] = useState<number[]>(() => EVENING_CARDS.map(() => 0)); // wrap hone par card dobara mount
+  const [paused, setPaused] = useState(false);
+  const [tick, setTick] = useState(0);
+  const startX = useRef<number | null>(null);
 
-  const listRef = useRef<HTMLOListElement>(null);
-  const { scrollYProgress } = useScroll({ target: listRef, offset: ["start 58%", "end 58%"] });
-  const fill = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  const tipTop = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  const tipOpacity = useTransform(scrollYProgress, [0, 0.03], [0, 1]);
+  const slotOf = (i: number, a = active) => {
+    const o = (((i - a) % n) + n) % n; // 0,1,2
+    return o === 0 ? 0 : o === 1 ? 1 : -1;
+  };
+
+  // Section pe aate hi side cards bahar se beech wale card ke paas aate hain (CSS: .eh:not(.is-in)),
+  // uske baad cards pehle jaise loop me ghoomte rehte hain.
+  // section pe aate hi thodi der "fresh": side cards beech wale ke baad aate hain
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    if (!on) return;
+    setFresh(true);
+    const t = window.setTimeout(() => setFresh(false), 1500);
+    return () => window.clearTimeout(t);
+  }, [on]);
+
+  const rotate = (target: number) => {
+    const d: 1 | -1 = slotOf(target, active) === 1 ? 1 : -1; // right wala aage aaye to "next"
+    // jo card ek side se dusri side jaata hai use naya key do (beech ke peeche se nikal ke aaye)
+    setSpins((prev) =>
+      prev.map((c, i) => {
+        const from = slotOf(i, active);
+        const to = slotOf(i, target);
+        return from !== 0 && to !== 0 && from !== to ? c + 1 : c;
+      }),
+    );
+    setDir(d);
+    setActive(target);
+    setTick((t) => t + 1);
+  };
+
+  const go = (to: number) => {
+    const target = ((to % n) + n) % n;
+    if (target === active) return;
+    rotate(target); // seedha ghoomna (gather sirf section pe aate waqt hota hai)
+  };
+  const next = () => go(active + 1);
+  const prev = () => go(active - 1);
+
+  // autoplay: section screen pe aate hi har AUTOPLAY_MS me agla card (hamesha chalta hai)
+  useEffect(() => {
+    if (!on || paused) return;
+    const t = window.setTimeout(next, AUTOPLAY_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on, paused, active, tick]);
+
+  // browser tab chhupa ho to ruk jaye, wapas aaye to phir chale
+  useEffect(() => {
+    const onVis = () => setPaused(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  const activeStrip = EVENING_CARDS[active];
 
   return (
-    <section id="the-evening" className="ev-pad ev-sec ev-bg-950">
-      <div className="section ev-evening-grid">
-        <div className="ev-evening-stick">
-          <div ref={headRef} data-in={headIn} className="ev-room-col ev-ev-head">
-            <p className="ev-room-eyebrow">The evening</p>
-            <h2 className="ev-ev-h mt-6">
-              <span><i>An evening</i></span>
-              <span><i>worth</i></span>
-              <span><i>staying for.</i></span>
-            </h2>
-            <Rise d={0.05}>
-              <p className="ev-ev-sub mt-6">Thursday, December 3, 2026. Six to nine.</p>
-            </Rise>
-          </div>
+    <section ref={ref} className={`eh ${on ? "is-in" : ""} ${fresh ? "fresh" : ""}`} id="evening">
+      <div className="eh-box">
+        <div className="eh-head">
+          <h2 className="eh-h">
+            <span className="a">{splitWords("The evening,", 0, 0.1)}</span>
+            <span className="b">{splitWords("hour by hour.", 0.25, 0.1)}</span>
+          </h2>
+          <p className="eh-p an" style={dl(0.35)}>
+            {EVENT.day}, {EVENT.date}. Six to nine at {EVENT.venue}. Six moments, one room, and conversations worth
+            staying for.
+          </p>
         </div>
 
-        <ol ref={listRef} className="ev-tl">
-          <div aria-hidden className="ev-tl-rail">
-            <motion.span className="ev-tl-fill" style={{ scaleY: reduce ? 1 : fill }} />
-            {!reduce && <motion.span className="ev-tl-tip" style={{ top: tipTop, opacity: tipOpacity }} />}
+        <div className="eh-strip an" style={dl(0.45)}>
+          {MOMENTS.map((m, i) => {
+            const card = EVENING_CARDS.indexOf(i);
+            const label = (
+              <>
+                <span>{m.time.replace(" PM", "")}{i === 0 ? " PM" : ""}</span>
+                <span>{m.short}</span>
+              </>
+            );
+            return (
+              <span key={m.short} style={{ display: "contents" }}>
+                {i > 0 && <span className="dot" aria-hidden>·</span>}
+                {card >= 0 ? (
+                  <button type="button" className={`it ${i === activeStrip ? "on" : ""}`}
+                    onClick={() => go(card)}>
+                    {label}
+                  </button>
+                ) : (
+                  <span className="it">{label}</span>
+                )}
+              </span>
+            );
+          })}
+        </div>
+
+        <div
+          className="eh-track"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Evening schedule"
+          tabIndex={0}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key === "ArrowRight") next();
+            if (e.key === "ArrowLeft") prev();
+          }}
+          onTouchStart={(e) => (startX.current = e.touches[0].clientX)}
+          onTouchEnd={(e) => {
+            if (startX.current == null) return;
+            const dx = e.changedTouches[0].clientX - startX.current;
+            if (Math.abs(dx) > 40) (dx < 0 ? next : prev)();
+            startX.current = null;
+          }}
+        >
+          {EVENING_CARDS.map((mi, i) => {
+            const m = MOMENTS[mi];
+            const slot = slotOf(i);
+            const entering = spins[i] > 0 && slot !== 0 && slot === (dir === 1 ? 1 : -1);
+            const cls = `ec s${slot} ${entering ? (dir === 1 ? "in-r" : "in-l") : ""}`;
+            return (
+              <article
+                key={`${mi}-${spins[i]}`}
+                className={cls}
+                aria-hidden={slot !== 0}
+                onClick={() => slot !== 0 && (slot === 1 ? next() : prev())}
+              >
+                <div className="ec-im">
+                  <img src={m.image} alt={m.title} loading="lazy" decoding="async" />
+                  <span className="ec-wash" aria-hidden />
+                  {slot === 0 ? (
+                    m.highlight && <span className="ec-bdg l"><Check /> Highlight of the night</span>
+                  ) : (
+                    <span className="ec-bdg l">Up next</span>
+                  )}
+                  <span className="ec-bdg r">{m.tag}</span>
+                </div>
+                <h3>{m.title}</h3>
+                <p>{m.text}</p>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="eh-nav">
+          <button type="button" className="eh-arr" aria-label="Previous" onClick={prev}><ArrowLeft /></button>
+          <div className={`eh-dots ${on && !paused ? "play" : ""}`} style={{ ["--dur" as string]: `${AUTOPLAY_MS}ms` } as CSSProperties}>
+            {EVENING_CARDS.map((mi, i) => (
+              <button key={`${mi}-${i === active ? tick : "x"}`} type="button" aria-label={MOMENTS[mi].title}
+                className={i === active ? "on" : ""} onClick={() => go(i)} />
+            ))}
           </div>
-          {TIMELINE.map((t) => (
-            <TimelineItem key={t.title} t={t} />
-          ))}
-        </ol>
+          <button type="button" className="eh-arr dk" aria-label="Next" onClick={next}><ArrowRight /></button>
+        </div>
       </div>
     </section>
   );
 }
 
-/* ---------------------- SECTION 8: THE EXPERIENCE --------------------------- */
-function Experience() {
-  const reduce = useReducedMotion();
-  const colRef = useRef<HTMLDivElement>(null);
-  const colIn = useInView(colRef, { once: true, amount: 0.35 });
-
-  const mediaRef = useRef<HTMLDivElement>(null);
-  const mediaIn = useInView(mediaRef, { once: true, amount: 0.25, margin: "0px 0px -8% 0px" });
-
-  // scroll ke saath image frame ke andar dheere upar-neeche hoti hai (parallax)
-  const { scrollYProgress } = useScroll({ target: mediaRef, offset: ["start end", "end start"] });
-  const imgY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-4%", "4%"]);
-
-  const d = (s: number) => ({ "--xd": `${s}s` }) as CSSProperties;
-
-  return (
-    <Scene className="ev-pad ev-sec ev-bg-800">
-      <div className="section ev-xp-grid">
-        <div ref={colRef} data-in={colIn} className="ev-room-col ev-xp-col">
-          <p className="ev-room-eyebrow">The experience</p>
-
-          <h2 className="ev-xp-h mt-6">
-            <span><i>Good food.</i></span>
-            <span><i>Better</i></span>
-            <span><i>conversations.</i></span>
-          </h2>
-
-          <p className="ev-xp-lead ev-xp-pop mt-8" style={d(0.5)}>
-            Curated bites. Crafted drinks. A beautiful setting, and a room filled with interesting people.
-          </p>
-
-          <div className="ev-xp-cols mt-8">
-            {EXPERIENCE.map((e, i) => (
-              <div key={e.label} className="ev-xp-pop" style={d(0.7 + i * 0.12)}>
-                <p className="ev-xp-label">{e.label}</p>
-                <p className="ev-xp-text">{e.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-[clamp(40px,6vw,88px)]">
-            <span className="ev-xp-hand">Come for the evening. Stay for the conversation.</span>
-          </p>
-        </div>
-
-        <div ref={mediaRef} data-in={mediaIn} className="ev-xp-media">
-          <div className="ev-xp-frame">
-            <div className="ev-xp-zoom">
-              <motion.img
-                src={IMG.experience}
-                alt="Champagne, canapés and figs on a marble table"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                style={{ y: imgY, scale: 1.1 }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Scene>
-  );
-}
-
-/* ----------------------- SECTION 9: THE SETTING ----------------------------- */
-function Setting() {
-  const reduce = useReducedMotion();
-
-  // image: chhoti box se scroll ke saath poori section tak badi hoti hai
-  const mediaRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: mediaRef, offset: ["start end", "start 15%"] });
-
-  const inset = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [28, 0]);
-  const side = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [36, 0]);
-  const radius = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [40, 0]);
-  const clipPath = useMotionTemplate`inset(${inset}% ${side}% ${inset}% ${side}% round ${radius}px)`;
-  const imgScale = useTransform(scrollYProgress, [0, 1], reduce ? [1, 1] : [1.6, 1]);
-
-  // card + text tab aate hain jab image lagbhag poori khul jaye (ek baar)
-  const [show, setShow] = useState(!!reduce);
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (v > 0.88) setShow(true);
-  });
-
-  const d = (s: number) => ({ "--xd": `${s}s` }) as CSSProperties;
-
-  return (
-    <Scene
-      id="the-setting"
-      className="ev-pad ev-setting"
-      bg={
-        <motion.div ref={mediaRef} className="ev-setting-media" aria-hidden style={{ clipPath }}>
-          <div className="ev-setting-zoom">
-            <motion.img
-              src={IMG.setting}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-              style={{ scale: imgScale }}
-              className="ev-setting-bg"
-            />
-          </div>
-          <div className="ev-setting-shade" />
-        </motion.div>
-      }
-    >
-      <div data-in={show} className="section ev-setting-wrap">
-        <div className="ev-setting-card">
-          <p className="ev-room-eyebrow">The setting</p>
-          <h2 className="ev-setting-h mt-6">
-            <span><i>The Cannon</i></span>
-            <span><i>West Houston</i></span>
-          </h2>
-          <p className="ev-setting-sub ev-st-pop mt-6" style={d(0.5)}>Gallery Steps</p>
-          <p className="ev-setting-p ev-st-pop mt-5 max-w-[28rem]" style={d(0.65)}>
-            A modern Houston setting for people who think differently, build boldly, and connect meaningfully.
-          </p>
-          <p className="ev-setting-addr ev-st-pop mt-6 max-w-[28rem]" style={d(0.8)}>{VENUE_ADDRESS}</p>
-          <div className="ev-st-pop mt-7" style={d(0.95)}>
-           <a href={VENUE_LINK} target="_blank" rel="noopener noreferrer" className="ev-setting-btn">
-              Explore the venue <ArrowRight size={14} />
-            </a>
-          </div>
-        </div>
-
-        <p className="ev-setting-tag ev-st-pop" style={d(1.2)}>
-          One room. Hundreds of possibilities.
-        </p>
-      </div>
-    </Scene>
-  );
-}
-
-/* ----------------------- SECTION 10: THE ROOM (drag) ------------------------ */
-const ROOM_SPEED = 50; // px/second — cards kitni tez chalein
-
-/** Cards hamesha chalte rehte hain (infinite loop). Mouse aaye to dheere ruk jaate hain. */
-function DragRow({ children }: { children: ReactNode }) {
-  const reduce = useReducedMotion();
-  const trackRef = useRef<HTMLDivElement>(null);
-  const st = useRef({ pos: 0, speed: 0, hover: false, down: false, lastX: 0 });
-  const [dragging, setDragging] = useState(false);
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const s = st.current;
-    let raf = 0;
-    let last = performance.now();
-    let period = 0;
-
-    const measure = () => {
-            const sec = track.closest(".ev-scene")?.querySelector<HTMLElement>(".section");
-      if (sec) {
-        const left = sec.getBoundingClientRect().left + parseFloat(getComputedStyle(sec).paddingLeft || "0");
-        track.style.setProperty("--ev-gutter", `${left}px`);
-      }
-      const cards = track.querySelectorAll<HTMLElement>(".ev-card");
-      const n = cards.length / 3;
-      if (!n) return;
-      const p = cards[n].offsetLeft - cards[0].offsetLeft;
-      if (p !== period) {
-        s.pos = p + (period ? (s.pos - period) % p : 0);
-        period = p;
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-
-    const tick = (now: number) => {
-      const dt = Math.min(now - last, 64);
-      last = now;
-      const target = reduce || s.hover || s.down ? 0 : ROOM_SPEED;
-      s.speed += (target - s.speed) * (1 - Math.exp(-dt / 220));
-      if (!s.down) s.pos += (s.speed * dt) / 1000;
-      if (period) {
-        while (s.pos >= period * 2) s.pos -= period;
-        while (s.pos < period) s.pos += period;
-      }
-      track.style.transform = `translate3d(${-s.pos}px,0,0)`;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
-    };
-  }, [reduce]);
-
-  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    st.current.down = true;
-    st.current.lastX = e.clientX;
-    setDragging(true);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  };
-  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!st.current.down) return;
-    st.current.pos -= e.clientX - st.current.lastX;
-    st.current.lastX = e.clientX;
-  };
-  const end = () => {
-    st.current.down = false;
-    setDragging(false);
-  };
-
-  return (
-    <div
-      className="ev-drag"
-      data-dragging={dragging}
-      onPointerEnter={(e) => { if (e.pointerType === "mouse") st.current.hover = true; }}
-      onPointerLeave={(e) => { if (e.pointerType === "mouse") st.current.hover = false; end(); }}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={end}
-      onPointerCancel={end}
-    >
-      <div ref={trackRef} className="ev-track">{children}</div>
-    </div>
-  );
-}
-
-function IdeasMeetPeople() {
-  return (
-    <Scene className="ev-pad ev-sec ev-bg-800">
-      <div className="section">
-        <Rise>
-          <p className="ev-room-eyebrow">The room</p>
-        </Rise>
-        <Rise d={0.02}>
-          <h2 className="ev-ideas-h mt-6">This is where ideas meet people.</h2>
-        </Rise>
-        <Rise d={0.04}>
-          <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-            <p className="ev-ideas-p max-w-[34rem]">
-              Entrepreneurs, investors, builders, and people who believe the next opportunity could be sitting right beside them.
-            </p>
-            <p className="ev-hint">
-              Hover to pause · Drag to explore <ArrowRight size={12} />
-            </p>
-          </div>
-        </Rise>
-      </div>
-
-      <Rise d={0.07} y={20} className="mt-[clamp(32px,4vw,56px)]">
-        <DragRow>
-          {[0, 1, 2].map((copy) =>
-            ROOM_CARDS.map((c) => (
-              <article key={`${copy}-${c.tag}`} className="ev-card" aria-hidden={copy !== 1}>
-                <img src={c.image} alt="" loading="eager" decoding="async" draggable={false} />
-                <div className="ev-card-shade" aria-hidden />
-                <div className="ev-card-body">
-                  <p className="ev-card-tag">{c.tag}</p>
-                  <h3 className="ev-card-title">{c.title}</h3>
-                </div>
-              </article>
-            ))
-          )}
-        </DragRow>
-      </Rise>
-    </Scene>
-  );
-}
-
-/* ----------------------- SECTION 10.5: SPONSOR ------------------------- */
+/* ====================== 7. SPONSORSHIP ===================================== */
 function Sponsor() {
+  const [ref, on] = useInView<HTMLHeadingElement>(0.4);
   const [plan, setPlan] = useState<string>("gold");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -2433,7 +1693,7 @@ function Sponsor() {
   // popup khulne par: Esc se band, background scroll lock
   useEffect(() => {
     if (!done) return;
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") setDone(null);
     };
     window.addEventListener("keydown", onKey);
@@ -2459,40 +1719,43 @@ function Sponsor() {
       setPhone("");
       setEmail("");
     } catch (err: any) {
-      setError(err?.message || "Something went wrong. Please try again.");
+      const msg = String(err?.message || "");
+      // internet / server band ho to "Failed to fetch" jaisa technical message na dikhe
+      setError(
+        !msg || /failed to fetch|networkerror|load failed|network request failed/i.test(msg)
+          ? "We couldn't reach the server. Please check your connection and try again."
+          : msg,
+      );
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section id="sponsor" className="ev-pad ev-sponsor">
-      <div className="section">
-        <div className="ev-sp-grid">
-          <Rise className="ev-sp-head">
-            <p className="ev-sp-eyebrow">
-              <span className="ev-sp-line" />
-              Sponsorship
-            </p>
-            <h2 className="ev-sp-h mt-6">
-              <span>Put your brand</span>
-              <span className="ev-h-gold">in the room.</span>
+    <section className="ev-cream ev-sponsor" id="sponsor">
+      <div className="ev-wrap">
+        <div className="ev-sp-head">
+          <div>
+            <Reveal className="ev-eyebrow">Sponsorship</Reveal>
+            <h2 ref={ref} className="ev-sp-h">
+              <Words className="a" text="Put your brand" on={on} d={0.1} />
+              <Words className="b" text="in the room." on={on} d={0.35} step={0.09} />
             </h2>
-            <p className="ev-sp-lead mt-6">
+          </div>
+          <Reveal d={0.3}>
+            <p className="ev-sp-lead">
               Support the BrickShare Capital Business Launch &amp; Grand Opening and be recognized in front of
               Houston's business owners, investors and professionals.
             </p>
-          </Rise>
+            <p className="ev-sp-hand">Choose a level, we handle the rest.</p>
+          </Reveal>
+        </div>
 
-          <Rise className="ev-sp-tagwrap" d={0.02}>
-            <p className="ev-hand ev-sp-tag">Choose a level, we handle the rest.</p>
-          </Rise>
-
-          <Rise className="ev-sp-cards" d={0.03}>
-            <div role="radiogroup" aria-label="Sponsor type" className="ev-sp-list">
-              {SPONSOR_PLANS.map((p) => (
+        <div className="ev-sp-grid">
+          <div role="radiogroup" aria-label="Sponsor type" className="ev-sp-list">
+            {SPONSOR_PLANS.map((p, i) => (
+              <Reveal key={p.key} d={0.08 + i * 0.08}>
                 <button
-                  key={p.key}
                   type="button"
                   role="radio"
                   aria-checked={plan === p.key}
@@ -2500,23 +1763,23 @@ function Sponsor() {
                   className={`ev-sp-card ${plan === p.key ? "is-on" : ""}`}
                 >
                   <span className="ev-sp-radio" aria-hidden />
-                  <span className="ev-sp-card-main">
-                    <span className="ev-sp-card-title">
+                  <span>
+                    <span className="ev-sp-title">
                       {p.label}
-                      {"limited" in p && p.limited && <em className="ev-sp-badge">Limited</em>}
+                      {p.limited && <em className="ev-sp-badge">Limited</em>}
                     </span>
-                    <span className="ev-sp-card-desc">{p.desc}</span>
+                    <span className="ev-sp-desc">{p.desc}</span>
                   </span>
-                  <span className="ev-sp-card-price">{p.price}</span>
+                  <span className="ev-sp-price">{p.price}</span>
                 </button>
-              ))}
-            </div>
-          </Rise>
+              </Reveal>
+            ))}
+          </div>
 
-          <Rise className="ev-sp-formwrap" d={0.05}>
+          <Reveal d={0.2}>
             <form className="ev-sp-form" onSubmit={submit} noValidate>
-              <h3 className="ev-sp-form-h">Register as a sponsor</h3>
-              <p className="ev-sp-form-p">
+              <h3>Register as a sponsor</h3>
+              <p>
                 Reserve your sponsorship level. Our events team will follow up with payment options and invoice
                 details.
               </p>
@@ -2544,104 +1807,111 @@ function Sponsor() {
               {error && <p className="ev-sp-error" role="alert">{error}</p>}
 
               <button type="submit" className="ev-sp-submit" disabled={busy}>
-                {busy ? "Please wait..." : "Confirm & Register"} <ArrowRight size={16} />
+                {busy ? "Please wait..." : "Confirm & Register"}
+                <span className="ev-pill-ic"><ArrowRight size={15} /></span>
               </button>
               <p className="ev-sp-fine">
                 No payment is taken on this form. By registering you agree to be contacted about your sponsorship.
               </p>
             </form>
-          </Rise>
+          </Reveal>
         </div>
       </div>
 
-      <AnimatePresence>
-        {done && (
-          <motion.div
-            className="ev-sp-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setDone(null)}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              className="ev-sp-pop"
-              initial={{ opacity: 0, scale: 0.88, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 12 }}
-              transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button type="button" className="ev-sp-close" aria-label="Close" onClick={() => setDone(null)}>
-                <X size={16} />
-              </button>
-              <span className="ev-sp-check"><Check size={30} strokeWidth={3} /></span>
-              <h3 className="ev-sp-pop-h">Thank you, {done.first}.</h3>
-              <p className="ev-sp-pop-p">
-                Your {done.label} ({done.price}) registration is received. Our events team will contact you with
-                payment options and invoice details.
-              </p>
-              <p className="ev-sp-pop-next">
-                Next: send your logo and materials once your sponsorship is confirmed.
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {done && (
+        <div className="ev-sp-overlay" onClick={() => setDone(null)}>
+          <div role="dialog" aria-modal="true" className="ev-sp-pop" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="ev-sp-close" aria-label="Close" onClick={() => setDone(null)}>
+              <Icon size={16} sw={2}><path d="M18 6 6 18M6 6l12 12" /></Icon>
+            </button>
+            <span className="ev-sp-check"><Icon size={30} sw={3}><path d="M20 6 9 17l-5-5" /></Icon></span>
+            <h3>Thank you, {done.first}.</h3>
+            <p>
+              Your {done.label} ({done.price}) registration is received. Our events team will contact you with
+              payment options and invoice details.
+            </p>
+            <p className="next">Next: send your logo and materials once your sponsorship is confirmed.</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
-/* ----------------------- SECTION 11: YOU'RE INVITED ------------------------- */
-function Invite() {
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  // scroll karte hi image gate ke andar zoom hoti jaati hai (1x -> 1.65x)
-  // [0.25, 0.85] = kab se kab tak zoom ho, [1, 1.65] = kitna zoom ho (apne hisaab se badal sakti ho)
- const scale = useTransform(scrollYProgress, [0.15, 0.95], reduce ? [1, 1] : [1, 2.4]);
+/* ====================== 8. THE INVITATION ================================== */
+function Invitation() {
+  const secRef = useRef<HTMLElement>(null);
+  const [on, setOn] = useState(false);
+
+  // scroll progress: card neeche se aate hue 0 -> 1 (chhota/feeka -> poora/gehra)
+  useEffect(() => {
+    const el = secRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.style.setProperty("--p", "1");
+      setOn(true);
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // card ka top viewport ke neeche (vh) se 35% tak aaye => 0..1
+      const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.65)));
+      el.style.setProperty("--p", p.toFixed(3));
+      if (p > 0.72) setOn(true);
+      else if (p < 0.2) setOn(false); // neeche chala gaya, agli baar phir animation
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <section ref={ref} id="rsvp" className="ev-pad ev-invite">
-      <div className="ev-invite-media" aria-hidden>
-        <motion.img
-          src={IMG.invite}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          style={{ scale }}
-          className="ev-invite-bg"
-        />
-      </div>
+    <section ref={secRef} className={`iv ${on ? "is-in" : ""}`} id="rsvp">
+      <div className="iv-card">
+        <img className="iv-bg" src={IMG.invite} alt="" loading="lazy" decoding="async" />
+        <span className="iv-shade" aria-hidden />
+        <span className="iv-wash" aria-hidden />
+        <span className="iv-glow" aria-hidden />
 
-      <div className="section ev-invite-content">
-        <Rise>
-          <p className="ev-room-eyebrow justify-center">You're invited</p>
-        </Rise>
-        <Rise d={0.02}>
-          <h2 className="ev-invite-h mt-6">Be in the room.</h2>
-        </Rise>
-        <Rise d={0.04}>
-          <p className="ev-invite-date mt-3">
-            <span className="ev-gold-text">December 3, 2026.</span>
+        <div className="iv-in">
+          <div>
+            <span className="iv-ey an" style={dl(0)}>The invitation</span>
+            <h2 className="iv-h">{splitWords("Be in the room.", 0.1, 0.12)}</h2>
+            <p className="iv-when an" style={dl(0.55)}>
+              <span>{EVENT.date}, {EVENT.day}</span>
+              <span className="sep" aria-hidden />
+              <span className="t">{EVENT.time}</span>
+            </p>
+            <p className="iv-where an" style={dl(0.65)}>
+              {EVENT.venue} · {EVENT.place}, {EVENT.address}
+            </p>
+            <div className="iv-chips">
+              {["RSVP required", "Limited guest list", "Food & beverages included"].map((c, i) => (
+                <span key={c} className="an" style={dl(0.75 + i * 0.08)}>{c}</span>
+              ))}
+            </div>
+            <a className="iv-btn an" style={dl(1)} href={EVENT.rsvpLink} target="_blank" rel="noopener noreferrer">
+              <span>RESERVE YOUR PLACE</span>
+              <i><ArrowUpRight size={16} /></i>
+            </a>
+          </div>
+          <p className="iv-q an" style={dl(1.15)}>
+            Something new is taking shape.
+            <br />
+            Will you be there when it does?
           </p>
-        </Rise>
-        <Rise d={0.06}>
-          <p className="ev-invite-p mt-6">
-            An evening of people, ideas, real estate, and possibilities all coming together under one roof.
-          </p>
-          <p className="ev-invite-q mt-6">Something new is taking shape. Will you be there when it does?</p>
-        </Rise>
-        <Rise d={0.08}>
-          <a href={LUMA_LINK} target="_blank" rel="noopener noreferrer" className="ev-invite-btn mt-[52px]">
-            RSVP <ArrowRight size={14} />
-          </a>
-          <p className="ev-invite-meta mt-5">
-            6:00 to 9:00 PM &nbsp;·&nbsp; The Cannon West Houston &nbsp;·&nbsp; Gallery Steps
-          </p>
-        </Rise>
+        </div>
       </div>
     </section>
   );
@@ -2650,23 +1920,25 @@ function Invite() {
 /* ------------------------------ PAGE --------------------------------------- */
 export default function Events() {
   useSeo(pageSeo("/events"));
-
+  const rootRef = useRef<HTMLDivElement>(null);
+  // scrollbar ke bina asli width, taaki content header/footer ke saath bilkul seedh me rahe
+  useEffect(() => {
+    const set = () => rootRef.current?.style.setProperty("--vw", `${document.documentElement.clientWidth}px`);
+    set();
+    window.addEventListener("resize", set);
+    return () => window.removeEventListener("resize", set);
+  }, []);
   return (
-    <div className="ev-root">
+    <div className="ev" ref={rootRef}>
       <style>{css}</style>
       <Hero />
-      <Marquee />
       <Room />
-      <WhyAttend />
-      <RightRoom />
       <People />
+      <RightRoom />
+      <Reasons />
       <Evening />
-      <Experience />
-      <Setting />
-      <IdeasMeetPeople />
       <Sponsor />
-      <Invite />
-      {/* footer yahan nahi — site ka common Footer already page ke baahar hai */}
+      <Invitation />
     </div>
   );
 }
